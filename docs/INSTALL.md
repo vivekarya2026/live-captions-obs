@@ -14,12 +14,13 @@ Everything runs on your own computer. Audio never leaves it.
 
 | | Mac | Windows |
 |---|---|---|
-| Computer | Apple Silicon (M1, M2, M3, M4…), macOS 12 or newer | Windows 10 or 11, 64-bit |
+| Computer | Apple Silicon (M1 or newer) or Intel, macOS 12 or newer | Windows 10 or 11, 64-bit |
 | Space | about 8 GB free | about 8 GB free |
 | Internet | only for the first start (downloads about 4 GB once) | same |
-| Speed | fast | fast with an NVIDIA graphics card; slower without one (uses the smaller speech model) |
+| Speed | fast on Apple Silicon; Intel Macs work on the processor alone (a 2019+ Intel i5/i7/i9 keeps up; use the 0.6B speech model) | fast with an NVIDIA graphics card; slower without one (uses the smaller speech model) |
 
-Intel Macs are not supported: the speech engine (PyTorch) no longer supports them.
+Not sure which Mac you have? Apple menu → **About This Mac**: “Chip: Apple M…” = Apple Silicon,
+“Processor: … Intel …” = Intel.
 
 OBS is optional. If you use it, install [OBS Studio](https://obsproject.com/) **first**.
 
@@ -27,7 +28,8 @@ OBS is optional. If you use it, install [OBS Studio](https://obsproject.com/) **
 
 Open the [latest release](https://github.com/vivekarya2026/live-captions-obs/releases/latest) and download:
 
-- **Mac**: `LiveCaptions-…-macOS-arm64.pkg`
+- **Mac with Apple Silicon (M1 or newer)**: `LiveCaptions-…-macOS-arm64.pkg`
+- **Mac with Intel processor**: `LiveCaptions-…-macOS-x86_64.pkg`
 - **Windows**: `LiveCaptions-…-Windows-x64-Setup.exe`
 
 ## Mac

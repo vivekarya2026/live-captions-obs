@@ -9,6 +9,7 @@ While a sentence is still being spoken a partial caption is sent every
 from __future__ import annotations
 
 import logging
+import platform
 import queue
 import threading
 import time
@@ -33,7 +34,9 @@ def pick_device() -> tuple[str, "object"]:
     import torch
     if torch.cuda.is_available():
         return "cuda:0", torch.float16
-    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+    # MPS only on Apple Silicon (on Intel Macs with AMD graphics it is slow and unreliable)
+    if (platform.machine() == "arm64" and getattr(torch.backends, "mps", None)
+            and torch.backends.mps.is_available()):
         return "mps", torch.float16
     return "cpu", torch.float32
 

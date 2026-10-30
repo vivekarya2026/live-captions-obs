@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import platform
 import shutil
 import subprocess
 import sys
@@ -34,6 +35,10 @@ MODELS = {
 ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b"]  # translation first: Whisper captions need it too
 RUNTIME_PACKAGES = ["qwen-asr", "sounddevice", "soundfile", "silero-vad"]
 RUNTIME_SIZE = 1.6e9
+# Intel Macs: PyTorch stopped at 2.2.2 (which needs NumPy 1.x); only take
+# ready-made wheels, since newer helpers (e.g. llvmlite) don't build there.
+INTEL_MAC = sys.platform == "darwin" and platform.machine() == "x86_64"
+INTEL_MAC_PINS = ["torch==2.2.2", "torchaudio==2.2.2", "numpy<2", "--only-binary=:all:"]
 
 
 def model_dir(key: str) -> Path:
@@ -178,7 +183,8 @@ class Setup:
         pip = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", "--no-warn-script-location",
                "--upgrade", "--target", str(paths.PYLIB)]
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        cmd = pip + ["torch", "torchaudio"] + RUNTIME_PACKAGES + ["huggingface_hub>=0.34,<1.0"]
+        torch_pkgs = INTEL_MAC_PINS if INTEL_MAC else ["torch", "torchaudio"]
+        cmd = pip + torch_pkgs + RUNTIME_PACKAGES + ["huggingface_hub>=0.34,<1.0"]
         if nvidia:  # CUDA build of PyTorch; everything else from PyPI
             cmd += ["--index-url", "https://download.pytorch.org/whl/cu124",
                     "--extra-index-url", "https://pypi.org/simple"]

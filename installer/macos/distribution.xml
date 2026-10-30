@@ -3,7 +3,7 @@
   <title>Live Captions @VERSION@</title>
   <welcome file="welcome.html" mime-type="text/html"/>
   <license file="LICENSE.txt"/>
-  <options customize="never" require-scripts="false" hostArchitectures="arm64"/>
+  <options customize="never" require-scripts="false" hostArchitectures="@ARCH@"/>
   <domains enable_localSystem="true"/>
   <volume-check>
     <allowed-os-versions><os-version min="12.0"/></allowed-os-versions>

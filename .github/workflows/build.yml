@@ -10,14 +10,20 @@ permissions:
 
 jobs:
   macos:
-    runs-on: macos-14   # Apple Silicon
+    runs-on: macos-14   # Apple Silicon; the Intel package is built through Rosetta
+    strategy:
+      matrix:
+        arch: [arm64, x86_64]
     steps:
       - uses: actions/checkout@v4
+      - name: Rosetta (for the Intel build)
+        if: matrix.arch == 'x86_64'
+        run: /usr/sbin/softwareupdate --install-rosetta --agree-to-license || true
       - name: Build .pkg
-        run: ./installer/macos/build.sh
+        run: ARCH=${{ matrix.arch }} ./installer/macos/build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: macos
+          name: macos-${{ matrix.arch }}
           path: dist/*.pkg
 
   windows:
@@ -52,6 +58,7 @@ jobs:
           body: |
             **Download for your computer:**
             - Mac (Apple Silicon M1 or newer): `LiveCaptions-…-macOS-arm64.pkg`
+            - Mac (Intel processor): `LiveCaptions-…-macOS-x86_64.pkg`
             - Windows 10/11 (64-bit): `LiveCaptions-…-Windows-x64-Setup.exe`
 
             These installers are not signed by Apple/Microsoft. See the

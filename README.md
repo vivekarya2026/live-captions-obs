@@ -45,7 +45,7 @@ cd app && ../.venv/bin/python -m livecaptions            # opens the window, dow
 ../.venv/bin/python ../tests/test_vocabulary.py          # every vocabulary term, every mode
 ```
 
-Build the Mac installer: `installer/macos/build.sh` → `dist/`.
+Build the Mac installers: `installer/macos/build.sh` (this Mac's chip) or `ARCH=x86_64 installer/macos/build.sh` (Intel) → `dist/`.
 Release: `git tag v1.0.1 && git push --tags` (Actions builds Mac + Windows and publishes them).
 
 ## Licence
