@@ -71,13 +71,14 @@ class QwenEngine:
         self.context = ""
         self.threshold = 0.55
         self.gain = 1.0             # mic volume set in the app window (no OBS)
-        self.enabled = True
+        self._enabled = True
         self.device_name: str | None = None
         self.status = "not loaded"
         self._audio: "queue.Queue[np.ndarray]" = queue.Queue(maxsize=400)
         self._jobs: "queue.Queue[tuple[np.ndarray, bool, int, int]]" = queue.Queue()
         self._last_partial: tuple[int, int, str] = (0, 0, "")  # segment, samples covered, text
         self._stream = None
+        self._started = False
         self._seg_id = 0
         self._lock = threading.Lock()
         self._mic_lock = threading.Lock()
@@ -108,15 +109,27 @@ class QwenEngine:
         log.info("Qwen3-ASR %s loaded on %s in %.1fs", key, device, time.time() - t0)
 
     # ---- audio -----------------------------------------------------------
-    def set_microphone(self, name: str | None) -> None:
-        with self._mic_lock:
-            if name == self.device_name and self._stream is not None:
-                return
-            self.device_name = name
-            self._open_stream()
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
 
-    def _open_stream(self) -> None:
-        import sounddevice as sd
+    @enabled.setter
+    def enabled(self, on: bool) -> None:
+        """Off = the microphone is closed (not just ignored), so the system's
+        mic-in-use indicator goes off; on = opened again."""
+        on = bool(on)
+        if on == self._enabled:
+            return
+        self._enabled = on
+        with self._mic_lock:
+            if on:
+                if self._stream is None and self._started:
+                    self._open_stream()
+            else:
+                self._close_stream()
+                log.info("Microphone released (listening off)")
+
+    def _close_stream(self) -> None:
         if self._stream is not None:
             try:
                 self._stream.stop()
@@ -124,6 +137,18 @@ class QwenEngine:
             except Exception:
                 pass
             self._stream = None
+
+    def set_microphone(self, name: str | None) -> None:
+        with self._mic_lock:
+            if name == self.device_name and (self._stream is not None or not self._enabled):
+                return
+            self.device_name = name
+            if self._enabled:
+                self._open_stream()
+
+    def _open_stream(self) -> None:
+        import sounddevice as sd
+        self._close_stream()
         idx = find_input_device(self.device_name)
 
         def callback(indata, frames, t, status):
@@ -144,7 +169,8 @@ class QwenEngine:
 
     def start(self) -> None:
         with self._mic_lock:
-            if self._stream is None:
+            self._started = True
+            if self._stream is None and self._enabled:
                 self._open_stream()
         threading.Thread(target=self._segmenter, daemon=True).start()
         threading.Thread(target=self._worker, daemon=True).start()

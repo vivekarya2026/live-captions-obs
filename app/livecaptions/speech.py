@@ -126,9 +126,8 @@ class Speech:
                 self.qwen = eng
                 self.configure(self.language, self.context, self.noise, self.enabled)
                 eng.set_microphone(obs_bridge.mic_name() if obs_bridge.state() else local_mic()["name"])
-                if not getattr(eng, "_started", False):
+                if not eng._started:
                     eng.start()
-                    eng._started = True
                 self.status = eng.status
                 if on_started:
                     on_started()

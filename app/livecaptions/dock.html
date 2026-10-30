@@ -99,8 +99,8 @@
   </div>
 
   <div class="master">
-    <div><b id="masterLabel">Captions ON</b><small id="masterHint">Started with OBS · clears 5 s after speech stops</small></div>
-    <button class="switch" id="master" role="switch" aria-checked="true" aria-label="Captions on or off"></button>
+    <div><b id="masterLabel">Mic ON</b><small id="masterHint"></small></div>
+    <button class="switch" id="master" role="switch" aria-checked="true" aria-label="Microphone and captions on or off"></button>
   </div>
 
   <details data-id="lang" open>
@@ -199,7 +199,8 @@
     const noObsOk = !d.obs && !/fail|not respond/i.test(d.status || '');
     document.body.classList.toggle('standalone', !d.obs && window.top === window);
     $('quit').hidden = d.obs;
-    if (busy) { pill.className = 'pill busy'; pill.textContent = 'Switching… (5–10 s)'; }
+    if (!d.captions_on && !busy) { pill.className = 'pill busy'; pill.textContent = 'Mic off'; }
+    else if (busy) { pill.className = 'pill busy'; pill.textContent = 'Switching… (5–10 s)'; }
     else if (d.speech_loading) { pill.className = 'pill busy'; pill.textContent = d.speech_status || 'Loading…'; }
     else if (noObsOk && d.engine !== 'qwen') { pill.className = 'pill busy'; pill.textContent = 'Getting ready…'; }
     else if (noObsOk) { pill.className = 'pill'; pill.textContent = 'Listening · ' + (d.model || '—'); }
@@ -208,10 +209,10 @@
 
     // Master switch
     $('master').setAttribute('aria-checked', d.captions_on);
-    $('masterLabel').textContent = d.captions_on ? 'Captions ON' : 'Captions OFF';
+    $('masterLabel').textContent = d.captions_on ? '🎙 Mic ON · listening' : 'Mic OFF';
     $('masterHint').textContent = d.captions_on
-      ? (d.obs ? `With OBS · clears ${d.clear_after} s after speech stops` : 'Without OBS · saved to Documents › Live Captions')
-      : 'Nothing is shown or saved';
+      ? (d.obs ? `Captions in OBS · clear ${d.clear_after} s after speech stops` : 'Captions saved to Documents › Live Captions')
+      : 'The microphone is released: nothing is heard, shown or saved';
 
     // Language
     const modes = $('modes');
