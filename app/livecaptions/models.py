@@ -178,7 +178,7 @@ class Setup:
         pip = [sys.executable, "-m", "pip", "install", "--disable-pip-version-check", "--no-warn-script-location",
                "--upgrade", "--target", str(paths.PYLIB)]
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        cmd = pip + ["torch", "torchaudio"] + RUNTIME_PACKAGES
+        cmd = pip + ["torch", "torchaudio"] + RUNTIME_PACKAGES + ["huggingface_hub>=0.34,<1.0"]
         if nvidia:  # CUDA build of PyTorch; everything else from PyPI
             cmd += ["--index-url", "https://download.pytorch.org/whl/cu124",
                     "--extra-index-url", "https://pypi.org/simple"]
