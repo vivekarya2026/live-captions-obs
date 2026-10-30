@@ -1,0 +1,59 @@
+name: Build installers
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-14   # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build .pkg
+        run: ./installer/macos/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.pkg
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Build Setup.exe
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File installer\windows\build.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.exe
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body: |
+            **Download for your computer:**
+            - Mac (Apple Silicon M1 or newer): `LiveCaptions-…-macOS-arm64.pkg`
+            - Windows 10/11 (64-bit): `LiveCaptions-…-Windows-x64-Setup.exe`
+
+            These installers are not signed by Apple/Microsoft. See the
+            [install guide](https://github.com/${{ github.repository }}/blob/main/docs/INSTALL.md)
+            for the one-time security prompt.

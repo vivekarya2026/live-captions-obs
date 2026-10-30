@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live Captions</title>
+<style>
+  :root { color-scheme: dark; --bg:#1e1f24; --card:#26282e; --line:#363943; --text:#e8e9ec;
+          --muted:#9aa0aa; --accent:#3b7de0; --accent-bg:#1f4e8c; --ok:#4cc38a; --warn:#f0b54a; --err:#ff8a80; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:10px; font:13px -apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  button, select, input { font: inherit; color: inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid #5b9dff; outline-offset:1px; }
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; }
+  .title { font-weight:650; font-size:14px; }
+  .pill { display:inline-flex; gap:6px; align-items:center; font-size:11px; padding:3px 8px; border-radius:999px;
+          background:#173326; color:#bdf0d6; white-space:nowrap; }
+  .pill::before { content:"●"; color:var(--ok); }
+  .pill.busy { background:#3a2f14; color:#f6dfa8; } .pill.busy::before { content:"◌"; color:var(--warn); }
+  .pill.err { background:#3a1b1b; color:#ffc9c4; } .pill.err::before { content:"✕"; color:var(--err); }
+  .master { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px;
+            background:var(--card); border:1px solid var(--line); border-radius:8px; margin-bottom:10px; }
+  .master b { font-size:14px; } .master small { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+  .switch { all:unset; cursor:pointer; width:42px; height:24px; border-radius:12px; background:#4a4d57; position:relative; flex:none; }
+  .switch::after { content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%;
+                   background:#fff; transition:left .15s ease; }
+  .switch[aria-checked="true"] { background:var(--accent); } .switch[aria-checked="true"]::after { left:21px; }
+  .switch:focus-visible { outline:2px solid #5b9dff; outline-offset:2px; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:8px; margin-bottom:10px; }
+  summary { list-style:none; cursor:pointer; padding:9px 12px; display:flex; align-items:center; gap:8px;
+            font-size:11px; font-weight:650; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  summary::-webkit-details-marker { display:none; }
+  summary::before { content:"▸"; font-size:11px; transition:transform .15s ease; }
+  details[open] summary::before { transform:rotate(90deg); }
+  summary .sum { margin-left:auto; text-transform:none; letter-spacing:0; font-weight:500; color:#c9ccd3;
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+  details[open] summary .sum { display:none; }
+  .body { padding:0 12px 10px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .opt { all:unset; cursor:pointer; padding:8px 9px; border-radius:6px; background:#2e3038; border:1px solid var(--line); }
+  .opt span { display:block; font-size:12.5px; } .opt small { color:var(--muted); font-size:10.5px; }
+  .opt[aria-checked="true"] { background:var(--accent-bg); border-color:var(--accent); }
+  .opt[aria-checked="true"] span::before { content:"✓ "; }
+  .opt:focus-visible { outline:2px solid #5b9dff; }
+  .busy-area[aria-busy="true"] { opacity:.55; pointer-events:none; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:7px 0; }
+  .row label { color:#c9ccd3; }
+  select { background:#2e3038; border:1px solid var(--line); border-radius:6px; padding:5px 6px; font-size:12px; max-width:200px; }
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { all:unset; cursor:pointer; padding:4px 9px; font-size:11.5px; background:#2e3038; }
+  .seg button[aria-checked="true"] { background:var(--accent-bg); color:#fff; }
+  .seg button + button { border-left:1px solid var(--line); }
+  input[type=range] { width:110px; accent-color:var(--accent); }
+  .btns { display:flex; gap:6px; margin-top:8px; }
+  .btn { flex:1; text-align:center; padding:7px; border-radius:6px; background:#2e3038; border:1px solid var(--line); font-size:12px; }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .btn.primary { background:var(--accent-bg); border-color:var(--accent); color:#fff; }
+  .btn.small { flex:none; padding:4px 9px; }
+  .btn.small[aria-pressed="true"] { background:#5a2323; border-color:#a14040; }
+  .note { color:var(--muted); font-size:11px; margin-top:6px; line-height:1.4; }
+  .caption { background:#15161a; border-radius:6px; padding:8px; min-height:40px; line-height:1.4; }
+  .caption:empty::before { content:"(screen is clear)"; color:#6b717c; }
+  .path { color:#b6bcc7; font-size:11px; word-break:break-all; }
+  .down { padding:14px; border:1px solid #6a2b2b; background:#2a1a1a; border-radius:8px; line-height:1.5; }
+  .setup { padding:10px 12px; border:1px solid #4a3d1c; background:#2a2414; border-radius:8px; margin-bottom:10px; }
+  .setup b { display:block; margin-bottom:4px; }
+  .bar { height:6px; border-radius:3px; background:#3a3424; overflow:hidden; margin:6px 0 4px; }
+  .bar > i { display:block; height:100%; background:var(--warn); width:0; transition:width .4s ease; }
+  .setup.err { border-color:#6a2b2b; background:#2a1a1a; }
+  input[type=text], input:not([type]) { background:#2e3038; border:1px solid var(--line); border-radius:6px; padding:5px 7px; font-size:12px; }
+  .steps { margin:6px 0 8px; padding-left:18px; color:#c9ccd3; font-size:11.5px; line-height:1.55; }
+  .steps .btn.small { padding:1px 7px; font-size:11px; }
+  .quit { all:unset; cursor:pointer; font-size:11px; color:var(--muted); padding:3px 8px; border:1px solid var(--line); border-radius:6px; }
+  body.standalone { max-width:460px; margin:0 auto; padding:16px; }
+</style>
+</head>
+<body>
+<div id="down" class="down" hidden role="alert">
+  <b>Live Captions is not running.</b><br>
+  Start <b>Live Captions</b> from Applications (Mac) or the Start menu (Windows), or open OBS.
+  If you use OBS and this stays, open <b>Tools → Scripts</b>, select
+  <b>live_captions.lua</b> and press <b>↻ Reload</b>.
+</div>
+
+<div id="app">
+  <div class="top">
+    <div class="title">Live Captions</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <div class="pill" id="pill" aria-live="polite">Starting…</div>
+      <button class="quit" id="quit" hidden title="Stop listening and close Live Captions">Quit</button>
+    </div>
+  </div>
+
+  <div class="setup" id="setup" hidden role="status" aria-live="polite">
+    <b id="setupTitle">First-time setup: downloading models</b>
+    <div class="bar" role="progressbar" aria-labelledby="setupTitle" id="setupBar"><i id="setupFill"></i></div>
+    <div class="note" id="setupMsg" style="margin-top:0"></div>
+    <div class="btns" id="setupRetryRow" hidden><button class="btn" id="setupRetry">Try again</button></div>
+  </div>
+
+  <div class="master">
+    <div><b id="masterLabel">Captions ON</b><small id="masterHint">Started with OBS · clears 5 s after speech stops</small></div>
+    <button class="switch" id="master" role="switch" aria-checked="true" aria-label="Captions on or off"></button>
+  </div>
+
+  <details data-id="lang" open>
+    <summary>Language <span class="sum" id="sumLang"></span></summary>
+    <div class="body busy-area" id="langArea">
+      <div class="grid" id="modes" role="radiogroup" aria-label="Caption language"></div>
+    </div>
+  </details>
+
+  <details data-id="mic" open>
+    <summary>Microphone <span class="sum" id="sumMic"></span></summary>
+    <div class="body busy-area" id="micArea">
+      <div class="row"><label for="micDev">Mic</label><select id="micDev"></select></div>
+      <div class="row"><label for="vol">Volume</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="range" id="vol" min="0" max="100" step="1">
+          <button class="btn small" id="mute" aria-pressed="false">Mute</button>
+        </div></div>
+      <div class="row"><label id="noiseLbl">Ignore background noise</label>
+        <div class="seg" id="noise" role="radiogroup" aria-labelledby="noiseLbl">
+          <button role="radio" data-v="low">Low</button><button role="radio" data-v="medium">Medium</button><button role="radio" data-v="high">High</button>
+        </div></div>
+      <div class="row"><label id="speechLbl">Speech model</label>
+        <div class="seg" id="speechModel" role="radiogroup" aria-labelledby="speechLbl"></div></div>
+      <div class="note" id="micNote">Qwen3 listens to the mic chosen here. 1.7B is larger and slower; 0.6B is the default.</div>
+    </div>
+  </details>
+
+  <details data-id="now" open>
+    <summary>Now on screen <span class="sum" id="sumNow"></span></summary>
+    <div class="body"><div class="caption" id="caption" aria-live="polite"></div></div>
+  </details>
+
+  <details data-id="save">
+    <summary>Saving transcript &amp; translation <span class="sum" id="sumSave"></span></summary>
+    <div class="body">
+      <div class="path" id="session"></div>
+      <div class="btns"><button class="btn" id="openBtn">Open folder</button><button class="btn" id="newBtn">New session</button></div>
+    </div>
+  </details>
+
+  <details data-id="gdocs">
+    <summary>Google Docs <span class="sum" id="sumDocs"></span></summary>
+    <div class="body">
+      <div id="docsLinked" hidden>
+        <div class="row"><span id="docsState" aria-live="polite"></span></div>
+        <div class="note" id="docsDetail"></div>
+        <div class="btns"><button class="btn" id="docsOff">Disconnect</button></div>
+      </div>
+      <div id="docsSetup">
+        <div class="note" style="margin-top:0">Write the original speech and the translation into a Google Doc as people speak.
+          One-time setup per document (about 3 minutes):</div>
+        <ol class="steps">
+          <li>In the Google Doc: <b>Extensions → Apps Script</b>. Delete what's there and paste the script
+            <button class="btn small" id="copyScript">Copy script</button> then press <b>Save</b>.</li>
+          <li><b>Deploy → New deployment</b> → type <b>Web app</b>. Execute as <b>Me</b>, access <b>Anyone</b>
+            → <b>Deploy</b> → <b>Authorize access</b> (if Google warns “unverified app”: <i>Advanced → Go to…</i>).</li>
+          <li>Reload the doc → menu <b>Live Captions → Open sidebar</b> → <b>Copy connection link</b>.</li>
+          <li>Paste it here:</li>
+        </ol>
+        <div class="row" style="gap:6px"><input id="docsLink" placeholder="https://script.google.com/macros/s/…/exec?k=…"
+             aria-label="Connection link from the Google Docs sidebar" style="flex:1;min-width:0">
+          <button class="btn small primary" id="docsConnect">Connect</button></div>
+        <div class="note" id="docsErr" role="alert"></div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let S = null, failures = 0, volTimer = null, editing = false;
+
+  // Remember which sections are open
+  const OPEN = JSON.parse(localStorage.getItem('openSections') || 'null');
+  document.querySelectorAll('details').forEach(d => {
+    if (OPEN && d.dataset.id in OPEN) d.open = OPEN[d.dataset.id];
+    d.addEventListener('toggle', () => {
+      const o = {}; document.querySelectorAll('details').forEach(x => o[x.dataset.id] = x.open);
+      localStorage.setItem('openSections', JSON.stringify(o));
+    });
+  });
+
+  async function api(path) {
+    const r = await fetch(path, { cache: 'no-store' });
+    return r.json();
+  }
+  async function act(path) { try { render(await api(path)); } catch (e) {} }
+
+  function render(d) {
+    S = d; failures = 0;
+    $('down').hidden = true; $('app').hidden = false;
+    const busy = d.status === 'switching';
+    // Status pill: text + symbol, not colour alone
+    const pill = $('pill');
+    const noObsOk = !d.obs && !/fail|not respond/i.test(d.status || '');
+    document.body.classList.toggle('standalone', !d.obs && window.top === window);
+    $('quit').hidden = d.obs;
+    if (busy) { pill.className = 'pill busy'; pill.textContent = 'Switching… (5–10 s)'; }
+    else if (d.speech_loading) { pill.className = 'pill busy'; pill.textContent = d.speech_status || 'Loading…'; }
+    else if (noObsOk && d.engine !== 'qwen') { pill.className = 'pill busy'; pill.textContent = 'Getting ready…'; }
+    else if (noObsOk) { pill.className = 'pill'; pill.textContent = 'Listening · ' + (d.model || '—'); }
+    else if (/fail|not respond|not running/i.test(d.status || '')) { pill.className = 'pill err'; pill.textContent = d.status; }
+    else { pill.className = 'pill'; pill.textContent = 'Running · ' + (d.model || '—'); }
+
+    // Master switch
+    $('master').setAttribute('aria-checked', d.captions_on);
+    $('masterLabel').textContent = d.captions_on ? 'Captions ON' : 'Captions OFF';
+    $('masterHint').textContent = d.captions_on
+      ? (d.obs ? `With OBS · clears ${d.clear_after} s after speech stops` : 'Without OBS · saved to Documents › Live Captions')
+      : 'Nothing is shown or saved';
+
+    // Language
+    const modes = $('modes');
+    if (!modes.children.length) {
+      for (const [k, label] of Object.entries(d.modes)) {
+        const b = document.createElement('button');
+        b.className = 'opt'; b.setAttribute('role', 'radio'); b.dataset.mode = k;
+        b.innerHTML = `<span>${label}</span><small>${d.hints[k] || ''}</small>`;
+        b.onclick = () => { if (k !== S.mode) act('/mode?set=' + k); };
+        modes.appendChild(b);
+      }
+    }
+    for (const b of modes.children) b.setAttribute('aria-checked', b.dataset.mode === d.mode);
+    $('langArea').setAttribute('aria-busy', busy);
+    $('sumLang').textContent = d.modes[d.mode];
+
+    // Microphone
+    const m = d.mic, sel = $('micDev');
+    if (!editing) {
+      const opts = m.devices.map(x => `<option value="${x.id.replace(/"/g, '&quot;')}">${x.name}</option>`).join('');
+      if (sel.dataset.opts !== opts) { sel.innerHTML = opts || '<option>(no microphones found)</option>'; sel.dataset.opts = opts; }
+      sel.value = m.device_id;
+      if (!volTimer) $('vol').value = Math.round(m.volume * 100);
+    }
+    $('mute').setAttribute('aria-pressed', m.muted); $('mute').textContent = m.muted ? 'Muted' : 'Mute';
+    for (const b of $('noise').children) b.setAttribute('aria-checked', b.dataset.v === m.noise);
+    $('micArea').setAttribute('aria-busy', busy);
+    const dev = (m.devices.find(x => x.id === m.device_id) || {}).name || 'Default';
+    $('sumMic').textContent = (m.muted ? 'Muted · ' : '') + dev;
+
+    // Speech model (Qwen3 0.6B / 1.7B)
+    const sm = $('speechModel');
+    if (!sm.children.length) {
+      for (const [k, v] of Object.entries(d.speech_models)) {
+        const b = document.createElement('button');
+        b.setAttribute('role', 'radio'); b.dataset.v = k;
+        b.textContent = v.label.replace('Qwen3 ', '');
+        b.onclick = () => { if (k !== S.speech_model) act('/speech?model=' + k); };
+        sm.appendChild(b);
+      }
+    }
+    for (const b of sm.children) {
+      const info = d.speech_models[b.dataset.v];
+      b.setAttribute('aria-checked', b.dataset.v === d.speech_model);
+      b.title = info.ready ? 'Downloaded' : 'Not downloaded yet';
+      b.textContent = info.label.replace('Qwen3 ', '') + (info.ready ? '' : ' ↓');
+    }
+    $('micNote').textContent = d.speech_loading ? (d.speech_status || 'Loading speech model…')
+      : d.engine === 'qwen' ? 'Qwen3 listens to the mic chosen here. 0.6B is the default; 1.7B is larger and slower.'
+      : d.obs ? 'Using Whisper until Qwen3 has downloaded (see progress above).'
+      : 'Speech starts when the download above is done.';
+
+    // First-time download
+    const st = d.setup || {}, need = st.ready && Object.values(st.ready).some(x => !x);
+    $('setup').hidden = !(st.running || st.error || need);
+    $('setup').classList.toggle('err', !!st.error);
+    $('setupFill').style.width = (st.percent || 0) + '%';
+    $('setupBar').setAttribute('aria-valuenow', st.percent || 0);
+    const gb = x => (x / 1e9).toFixed(1);
+    $('setupTitle').textContent = st.error ? 'Download stopped' : `First-time setup: ${st.percent || 0}%`;
+    $('setupMsg').textContent = st.error ? st.message
+      : `${st.message || 'Waiting…'} ${st.total ? `(${gb(st.done)} of ${gb(st.total)} GB)` : ''} — `
+        + (d.obs ? 'captions keep working with Whisper meanwhile.' : 'captions start when this is done (only the first time).');
+    $('setupRetryRow').hidden = !(st.error || (!st.running && need));
+
+    // Volume / mute: OBS's Mic/Aux, or (without OBS) the app's own mic level
+    if (!d.obs && d.engine === 'qwen') $('micNote').textContent = 'Without OBS: Live Captions listens to the mic chosen here.';
+
+    // Google Docs
+    const g = d.gdocs || {};
+    $('docsLinked').hidden = !g.linked; $('docsSetup').hidden = !!g.linked;
+    if (g.linked) {
+      let s, det;
+      if (g.error) { s = '✕ ' + g.error; det = 'Retrying automatically.'; }
+      else if (g.writing === null || g.writing === undefined) { s = '◌ Connecting…'; det = ''; }
+      else if (g.writing) { s = '● Writing into “' + (g.doc || 'Google Doc') + '”'; det = `${g.sent} lines sent` + (g.waiting ? ` · ${g.waiting} waiting` : ''); }
+      else { s = '○ Connected to “' + (g.doc || 'Google Doc') + '”'; det = 'Press Start writing in the doc’s Live Captions sidebar.'; }
+      $('docsState').textContent = s; $('docsDetail').textContent = det;
+      $('sumDocs').textContent = g.error ? 'problem' : g.writing ? 'writing' : 'connected';
+    } else { $('sumDocs').textContent = 'off'; }
+
+    // Now on screen
+    $('caption').textContent = d.caption || '';
+    $('sumNow').textContent = d.caption ? d.caption : '(clear)';
+
+    // Session (path shown relative to Documents/Live Captions)
+    const root = d.sessions_root || '', sess = d.session || '';
+    const folder = sess.startsWith(root) ? sess.slice(root.length).replace(/^[\\/]/, '') : sess;
+    $('session').textContent = folder ? `Live Captions/${folder} · ${d.lines} line${d.lines === 1 ? '' : 's'}`
+                                      : 'A new folder (in Documents › Live Captions) starts with the next caption';
+    $('sumSave').textContent = folder ? `${d.lines} lines` : 'new';
+  }
+
+  // Controls
+  $('master').onclick = () => act('/captions?on=' + (S && S.captions_on ? 0 : 1));
+  const sel = $('micDev');
+  sel.onfocus = () => editing = true; sel.onblur = () => editing = false;
+  sel.onchange = () => { editing = false; act('/mic?device=' + encodeURIComponent(sel.value)); };
+  $('vol').oninput = e => {
+    clearTimeout(volTimer);
+    volTimer = setTimeout(() => { volTimer = null; act('/mic?volume=' + (e.target.value / 100)); }, 150);
+  };
+  $('mute').onclick = () => act('/mic?muted=' + (S && S.mic.muted ? 0 : 1));
+  for (const b of $('noise').children) b.onclick = () => { if (b.dataset.v !== S.mic.noise) act('/mic?noise=' + b.dataset.v); };
+  $('setupRetry').onclick = () => act('/setup/retry');
+  $('openBtn').onclick = () => fetch('/session/open');
+  $('newBtn').onclick = () => act('/session/new').then(() => act('/state'));
+  $('quit').onclick = async () => {
+    if (!confirm('Quit Live Captions? It stops listening to the microphone.')) return;
+    try { await fetch('/quit'); } catch (e) {}
+    document.body.innerHTML = '<p style="padding:20px">Live Captions has stopped. You can close this window.</p>';
+    stopped = true;
+  };
+  $('copyScript').onclick = async () => {
+    const txt = await (await fetch('/gdocs/script')).text();
+    try { await navigator.clipboard.writeText(txt); }
+    catch (e) { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+    $('copyScript').textContent = 'Copied ✓'; setTimeout(() => $('copyScript').textContent = 'Copy script', 2500);
+  };
+  $('docsConnect').onclick = async () => {
+    const link = $('docsLink').value.trim();
+    if (!link) return;
+    const d = await api('/gdocs?link=' + encodeURIComponent(link));
+    $('docsErr').textContent = d.gdocs_error || '';
+    if (!d.gdocs_error) $('docsLink').value = '';
+    render(d);
+  };
+  $('docsOff').onclick = () => act('/gdocs?disconnect=1');
+
+  let stopped = false;
+  async function poll() {
+    if (stopped) return;
+    try { render(await api('/state')); }
+    catch (e) {
+      if (++failures >= 4) { $('down').hidden = false; $('app').hidden = true; }  // ~3 s
+    }
+    setTimeout(poll, 700);
+  }
+  poll();
+</script>
+</body>
+</html>

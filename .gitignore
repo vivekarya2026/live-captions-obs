@@ -1,0 +1,10 @@
+.venv
+python/
+dist/
+build/
+__pycache__/
+*.pyc
+.DS_Store
+*.tmp
+# models and runtime data live in ~/.livecaptions, never in the repo
+models/

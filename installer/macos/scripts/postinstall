@@ -1,0 +1,36 @@
+#!/bin/bash
+# Runs as root after the files are installed. Everything user-specific is done
+# as the logged-in user. Never fails the install: each step is best effort.
+APP="/Applications/Live Captions.app"
+RES="$APP/Contents/Resources"
+PY="$RES/python/bin/python3"
+USER_NAME="$(stat -f%Su /dev/console)"
+if [ -z "$USER_NAME" ] || [ "$USER_NAME" = "root" ]; then USER_NAME="$USER"; fi
+USER_ID="$(id -u "$USER_NAME")"
+HOME_DIR="$(dscl . -read "/Users/$USER_NAME" NFSHomeDirectory 2>/dev/null | awk '{print $2}')"
+LOG="/tmp/livecaptions-install.log"
+
+as_user() { sudo -u "$USER_NAME" -H env HOME="$HOME_DIR" PYTHONPATH="$RES/app" "$@"; }
+
+{
+  echo "Live Captions postinstall for $USER_NAME ($(date))"
+  xattr -dr com.apple.quarantine "$APP" 2>/dev/null
+
+  # Stop an older Live Captions that may still be running
+  mkdir -p "$HOME_DIR/.livecaptions" && touch "$HOME_DIR/.livecaptions/stop_translator"
+  chown -R "$USER_NAME" "$HOME_DIR/.livecaptions"
+  sleep 2
+
+  # OBS: register the script + the dock (later, if OBS is open right now)
+  if [ -d "/Applications/OBS.app" ]; then
+    as_user "$PY" -m livecaptions.obs_setup --later-if-open --script "$RES/obs/live_captions.lua"
+    as_user "$PY" -m livecaptions.install_localvocal
+  else
+    echo "OBS not installed: Live Captions works on its own (and with Google Docs)"
+  fi
+
+  # Open the Live Captions window (starts the one-time model download)
+  rm -f "$HOME_DIR/.livecaptions/stop_translator"
+  launchctl asuser "$USER_ID" sudo -u "$USER_NAME" open "$APP" || true
+} >> "$LOG" 2>&1
+exit 0

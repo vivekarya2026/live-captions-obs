@@ -1,0 +1,80 @@
+# Words removed from every caption (before AND after translation).
+# One word or phrase per line. Matching ignores upper/lower case.
+# A trailing * matches any ending, e.g. "fuck*" also blocks "fucking".
+# Lines starting with # are comments.
+
+# English
+fuck*
+motherfuck*
+shit*
+bullshit
+bitch*
+bastard*
+asshole*
+arsehole*
+dickhead*
+dick
+cock
+cunt*
+pussy
+slut*
+whore*
+wanker*
+twat*
+prick
+piss off
+damn
+goddamn
+crap
+
+# Hindi (romanized)
+chutiya*
+chutiye
+madarchod*
+maderchod*
+behenchod*
+bhenchod*
+bhosdi*
+bhosda*
+gandu*
+gaand
+harami*
+haramzada*
+haramkhor*
+kamina*
+kamine
+randi*
+lund
+lauda*
+lavda*
+chod*
+bakchod*
+jhaant*
+
+# Hindi (Devanagari)
+चूतिया*
+चूतिये
+चुतिया*
+मादरचोद*
+बहनचोद*
+बहन चोद*
+भेनचोद*
+भोसड़ी*
+भोसडी*
+भोसड़ा*
+गांडू*
+गाँडू*
+गांड
+हरामी*
+हरामज़ादा*
+हरामजादा*
+हरामखोर*
+कमीना*
+कमीने
+रंडी*
+लंड
+लौड़ा*
+लौडा*
+चोद*
+बकचोद*
+झांट*

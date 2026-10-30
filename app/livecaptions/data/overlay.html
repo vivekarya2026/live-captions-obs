@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!--
+  CaptiOCR live caption overlay for OBS (Browser source, "Local file").
+  Polls live_caption.txt (written by CaptiOCR next to this file) and shows it
+  at the bottom of a transparent 1920x1080 canvas. Uses the browser's text
+  shaping, so Hindi (Devanagari) and Punjabi (Gurmukhi) render correctly.
+  URL options: ?size=48&bottom=80&interval=300
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  #wrap {
+    position: fixed; left: 0; right: 0; bottom: var(--bottom, 80px);
+    display: flex; justify-content: center; pointer-events: none;
+  }
+  #cap {
+    max-width: 85vw; padding: 14px 28px; border-radius: 10px;
+    background: rgba(0, 0, 0, 0.72); color: #fff; text-align: center;
+    font: 600 var(--size, 48px)/1.35 "Kohinoor Devanagari", "Gurmukhi MN",
+          "Mukta Mahee", "Helvetica Neue", Arial, sans-serif;
+    white-space: pre-line; text-shadow: 0 2px 4px rgba(0,0,0,.9);
+    transition: opacity .25s ease;
+  }
+  #cap.empty { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="cap" class="empty"></div></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const root = document.documentElement.style;
+  if (q.get('size'))   root.setProperty('--size', q.get('size') + 'px');
+  if (q.get('bottom')) root.setProperty('--bottom', q.get('bottom') + 'px');
+  const interval = +(q.get('interval') || 100);
+  const cap = document.getElementById('cap');
+  let last = null;
+  async function poll() {
+    try {
+      const r = await fetch('live_caption.txt?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) {
+        // Clean speech-to-text noise: leading dashes and "-" only lines.
+        let text = (await r.text()).trim().replace(/^[\s\-–—]+/u, '').trim();
+        // Ignore updates with no real letters (keep the last good caption).
+        if (text && !/[\p{L}\p{N}]/u.test(text)) text = last ?? '';
+        if (text !== last) {
+          last = text;
+          cap.textContent = text;
+          cap.classList.toggle('empty', !text);
+        }
+      }
+    } catch (e) { /* file may be mid-replace; try again next tick */ }
+    setTimeout(poll, interval);
+  }
+  poll();
+</script>
+</body>
+</html>
