@@ -11,7 +11,7 @@ exactly as in the vocabulary sheet).
 - Polite captions: abusive words are removed.
 - Runs **offline on your own computer** after a one-time model download. Audio never leaves it.
 
-**[Download and install →](docs/INSTALL.md)** · [Google Docs setup](docs/GOOGLE_DOCS.md)
+**[Download and install →](docs/INSTALL.md)** · **[Step-by-step setup on any computer (installer or Cursor) →](docs/SETUP_GUIDE.md)** · [Google Docs setup](docs/GOOGLE_DOCS.md)
 
 | Caption mode | Speaker uses | Captions in |
 |---|---|---|

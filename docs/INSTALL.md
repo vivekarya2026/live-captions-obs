@@ -10,6 +10,9 @@ with the Nirankari vocabulary). You can use it:
 
 Everything runs on your own computer. Audio never leaves it.
 
+*Setting up from the code with Cursor, or several computers? See the
+[step-by-step setup guide](SETUP_GUIDE.md).*
+
 ## What you need
 
 | | Mac | Windows |
