@@ -4,7 +4,9 @@ Python packages Qwen3-ASR needs) in the background, with progress for the dock.
   runtime    PyTorch + qwen-asr + sounddevice   ~1.5 GB (Mac) / ~2.5 GB (NVIDIA)
   nllb       Meta NLLB-200 1.3B int8 (CTranslate2) translation   1.3 GB
   qwen-0.6b  Qwen3-ASR 0.6B speech recognition (default)         1.8 GB
-  qwen-1.7b  Qwen3-ASR 1.7B speech recognition (dock option)     4.4 GB
+  qwen-1.7b  Qwen3-ASR 1.7B speech recognition (dock option)     4.4 GB, only when chosen
+
+Models can also come from an offline pack (LiveCaptions-model-*.zip, see PACKS).
 
 Until Qwen3 is ready, captions come from Whisper inside OBS (LocalVocal).
 """
@@ -42,6 +44,31 @@ MODELS = {
     "qwen-1.7b": {"repo": "Qwen/Qwen3-ASR-1.7B", "size": 4.7e9, "label": "Speech (Qwen3-ASR 1.7B)"},
 }
 ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b"]  # translation first: Whisper captions need it too
+OPTIONAL = {"qwen-1.7b"}  # downloaded only when chosen in the window
+# Offline pack: the same model files as zips, on this project's GitHub release "models-v1".
+# Used when huggingface.co can't be reached, or found on disk (Downloads/Desktop/Documents).
+PACKS = {"nllb", "qwen-0.6b"}
+PACK_URL = "https://github.com/vivekarya2026/live-captions-obs/releases/download/models-v1/LiveCaptions-model-{key}.zip"
+PACK_CHECK = {"nllb": "model.bin", "qwen-0.6b": "model.safetensors"}
+
+
+def _find_pack(key: str) -> Path | None:
+    if key not in PACKS:
+        return None
+    for d in ("Downloads", "Desktop", "Documents"):
+        for p in sorted((paths.HOME / d).glob(f"LiveCaptions-model-{key}*.zip")):
+            return p
+    return None
+
+
+def _unpack(zip_path: Path, target: Path, key: str) -> None:
+    """Extract a flat model zip. Bad or incomplete zips raise (CRC is checked while reading)."""
+    import zipfile
+    with zipfile.ZipFile(zip_path) as z:
+        names = z.namelist()
+        if PACK_CHECK[key] not in names or any("/" in n or "\\" in n or n.startswith(".") for n in names):
+            raise ValueError(f"{zip_path.name} is not a Live Captions {key} pack")
+        z.extractall(target)
 RUNTIME_PACKAGES = ["qwen-asr", "sounddevice", "soundfile", "silero-vad"]
 RUNTIME_SIZE = 1.6e9
 # Intel Macs: PyTorch stopped at 2.2.2 (which needs NumPy 1.x); only take
@@ -101,7 +128,7 @@ def _why(e: BaseException) -> str:
         return ("a secure connection to huggingface.co was refused (often antivirus 'HTTPS scanning' "
                 "or an office proxy). Turn that off or try another network.")
     if "nospace" in s or "no space" in s or "errno 28" in s:
-        return "the disk is full. Free about 15 GB."
+        return "the disk is full. Free about 10 GB."
     if "timeout" in s or "timed out" in s or "connect" in s or "resolve" in s or "getaddrinfo" in s:
         return ("huggingface.co can't be reached from this network. Turn off the VPN, try another "
                 "network (phone hotspot), or allow Live Captions in the firewall/antivirus.")
@@ -151,7 +178,8 @@ class Setup:
         return {"running": self.running, "stage": self.stage, "message": message,
                 "error": self.error, "done": done, "total": self.total,
                 "percent": int(100 * done / self.total) if self.total else 100,
-                "ready": {"runtime": runtime_ready(), **{k: model_ready(k) for k in MODELS}}}
+                "ready": {"runtime": runtime_ready(),
+                          **{k: model_ready(k) for k in MODELS if k not in OPTIONAL}}}
 
     def when_ready(self, key: str, fn) -> None:
         self.on_ready.setdefault(key, []).append(fn)
@@ -164,10 +192,11 @@ class Setup:
                 log.exception("ready callback for %s failed", key)
 
     # ---- steps ----------------------------------------------------------
-    def start(self) -> None:
+    def start(self, want: str | None = None) -> None:
+        """Download what's missing. Optional models (1.7B) only when `want` names them."""
         if self.running:
             return
-        todo = [k for k in ORDER if not model_ready(k)]
+        todo = [k for k in ORDER if not model_ready(k) and (k not in OPTIONAL or k == want)]
         need_runtime = not runtime_ready()
         if not todo and not need_runtime:
             return
@@ -205,20 +234,35 @@ class Setup:
         self.stage, self.message = key, f"Downloading {info['label']}…"
         log.info(self.message)
         self._dl_dir, self._dl_base, self._seen = target, _dir_size(target), (0, 0.0)
-        for attempt in range(3):
+        pack = _find_pack(key)
+        if pack:  # offline pack in Downloads/Desktop/Documents: no internet needed
+            self.message = f"Installing {info['label']} from {pack.name}…"
+            _unpack(pack, target, key)
+        else:
             try:
                 snapshot_download(info["repo"], local_dir=str(target))
                 for repo, fname in info.get("extra", []):
                     hf_hub_download(repo, fname, local_dir=str(target))
-                break
             except Exception as e:
-                if attempt == 2:
+                if key not in PACKS:
                     raise
-                log.warning("Download of %s interrupted, retrying", key, exc_info=True)
-                self.message = f"Retrying ({attempt + 2} of 3): {_why(e)}"
-                time.sleep(5)
+                # huggingface.co blocked or failing: same files from this project's GitHub release
+                log.warning("Hugging Face download of %s failed, using GitHub", key, exc_info=True)
+                self.message = f"huggingface.co didn't work, downloading {info['label']} from GitHub instead…"
+                zip_path = target / ".pack.zip"
+                try:
+                    from .install_localvocal import _download as fetch
+                    fetch(PACK_URL.format(key=key), zip_path)
+                    self._dl_dir, self.current = None, info["size"]  # don't count the zip twice
+                    self.message = f"Unpacking {info['label']}…"
+                    _unpack(zip_path, target, key)
+                except Exception:
+                    log.warning("GitHub download of %s failed too", key, exc_info=True)
+                    raise e from None
+                finally:
+                    zip_path.unlink(missing_ok=True)
         (target / ".complete").write_text(time.strftime("%Y-%m-%d %H:%M:%S"))
-        self._dl_dir = None
+        self._dl_dir, self.current = None, 0.0
         self.done += info["size"]
         log.info("%s ready", info["label"])
         self._fire(key)

@@ -145,7 +145,7 @@ class Speech:
         obs_bridge.write_atomic(MODEL_FILE, key)
         self.model_key = key
         if not self.qwen_possible(key):
-            self.setup.start()
+            self.setup.start(want=key)
             return "downloading"
         if self.qwen is not None and self.qwen.model_key == key:
             return "ok"

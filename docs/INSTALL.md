@@ -18,8 +18,8 @@ Everything runs on your own computer. Audio never leaves it.
 | | Mac | Windows |
 |---|---|---|
 | Computer | Apple Silicon (M1 or newer) or Intel, macOS 12 or newer | Windows 10 or 11, 64-bit |
-| Space | about 15 GB free | about 15 GB free |
-| Internet | only for the first start (downloads about 10 GB once) | same |
+| Space | about 10 GB free | about 10 GB free |
+| Internet | only for the first start (downloads about 5 GB once) | same |
 | Speed | fast on Apple Silicon; Intel Macs work on the processor alone (a 2019+ Intel i5/i7/i9 keeps up; use the 0.6B speech model) | fast with an NVIDIA graphics card; slower without one (uses the smaller speech model) |
 
 Not sure which Mac you have? Apple menu → **About This Mac**: “Chip: Apple M…” = Apple Silicon,

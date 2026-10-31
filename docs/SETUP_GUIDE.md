@@ -20,8 +20,8 @@ Project page: **https://github.com/vivekarya2026/live-captions-obs**
 | **Mac with Intel** | Apple menu → **About This Mac** → *Processor: … Intel …* | `LiveCaptions-…-macOS-x86_64.pkg` |
 | **Windows 10 / 11 (64-bit)** | Settings → System → About → *System type: 64-bit* | `LiveCaptions-…-Windows-x64-Setup.exe` |
 
-Every computer needs: **macOS 12+ or Windows 10/11**, about **15 GB free space**, and internet for the
-first start only (about 10 GB downloads once: translation, speech engine, and two speech models). After that it works offline.
+Every computer needs: **macOS 12+ or Windows 10/11**, about **10 GB free space**, and internet for the
+first start only (about 5 GB downloads once: translation, speech engine, speech model; the larger 1.7B model adds 4.7 GB only if you pick it). After that it works offline.
 
 | Speed | What to expect |
 |---|---|
@@ -165,7 +165,7 @@ Open the terminal in Cursor: **Terminal → New Terminal** (`` Ctrl+` ``). It op
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cd app
-../.venv/bin/python -m livecaptions --download # one-time download (speech engine + models, ~10 GB)
+../.venv/bin/python -m livecaptions --download # one-time download (speech engine + models, ~5 GB)
 ../.venv/bin/python -m livecaptions --test     # self-test: translates sample sentences
 ../.venv/bin/python -m livecaptions            # opens the window
 ```
@@ -275,7 +275,8 @@ The Google Docs part is per document, not per computer: on a new computer, only 
 | Window says *Live Captions is not running* | start it again (Applications / Start menu / `python -m livecaptions`) |
 | No captions | correct mic chosen and not muted? Mac: System Settings → Privacy & Security → Microphone → allow *Live Captions* (or *OBS*, or *Cursor* when run from Cursor) |
 | Download stopped | Press **Try again** in the window; it continues where it stopped |
-| Download stays at 0% / says *No data for … s* | Something blocks huggingface.co: turn off the VPN, try another network (e.g. phone hotspot), or allow Live Captions in the antivirus/firewall. Then **Try again**. Needs version 1.0.4 or newer |
+| Download stays at 0% / says *No data for … s* | Something blocks huggingface.co: turn off the VPN, try another network (e.g. phone hotspot), or allow Live Captions in the antivirus/firewall. Then **Try again**. From version 1.0.5 the app switches to GitHub by itself when huggingface.co fails |
+| No internet / everything blocked | Use the **offline pack**: download both `LiveCaptions-model-….zip` files from the [model pack page](https://github.com/vivekarya2026/live-captions-obs/releases/tag/models-v1) on another computer, copy them (USB / Google Drive) into **Downloads**, **Desktop** or **Documents**, then open Live Captions (1.0.5+). The speech engine still needs internet once (pypi.org) |
 | Captions come late (Intel Mac / PC without NVIDIA) | choose the **0.6B** speech model; close other heavy apps |
 | `python3.11: command not found` / `py -3.11` not found | install Python 3.11 (B1) and open a new terminal |
 | Intel Mac: *A module compiled with NumPy 1.x cannot run in NumPy 2* | `.venv/bin/pip install "numpy<2" --only-binary=:all:` |

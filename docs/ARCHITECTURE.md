@@ -53,7 +53,7 @@ flowchart TD
 | `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/mic`, `/captions`, `/gdocs`, `/quit`…) | the cleanup, translation, or window behaviour changes |
 | `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic) | you add a speech engine |
 | `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real | mic or speech-model behaviour |
-| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2 | model versions, download logic |
+| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B model downloads only when chosen | model versions, download logic |
 | `hinglish.py` | Hindi ↔ Hinglish (Roman letters) spelling | Hinglish spelling |
 | `gdocs.py` | Queues lines and sends them to the Google Docs script, retrying when offline | Google Docs sending |
 | `obs_bridge.py`, `obs_setup.py`, `install_localvocal.py` | OBS: config, the script, the LocalVocal plugin | OBS integration |
@@ -110,6 +110,8 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Mic off releases the microphone | Log shows "Microphone released"; macOS mic dot goes off | Oct 2026 | high |
 | First-time download works from zero | Empty data folder, plain HTTPS (Xet off): 0 → 100% for NLLB in ~90 s on a Mac | Oct 31 2026 | high (Mac), **Windows not re-tested** |
 | Blocked network fails clearly instead of hanging | Pointed the download at an unreachable address: stops after ~100 s with "huggingface.co can't be reached…" + Try again (before: waited forever at 0%) | Oct 31 2026 | high |
+| Offline pack installs with no Hugging Face | Fresh home folder, zips in Downloads, Hugging Face blocked: both models ready in 3 s, translation + Hindi transcription correct | Oct 31 2026 | high (Mac) |
+| GitHub fallback when Hugging Face fails | Hugging Face blocked: NLLB installed from the real GitHub pack in 14 min, progress moving, no leftovers; a zip with a `../` path is rejected | Oct 31 2026 | high (Mac) |
 | Vocabulary terms survive translation | `tests/test_vocabulary.py` | each change | high |
 
 When you test something new, add a row. Results get stale: re-test after big updates
