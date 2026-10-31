@@ -79,6 +79,35 @@ def has_nvidia() -> bool:
         return False
 
 
+def _hf_timeouts() -> None:
+    """Every Hugging Face request gets a 30 s connect/read limit. Without it a blocked
+    network (firewall, DNS filter, captive portal) makes the download wait forever at 0%."""
+    import requests
+    from huggingface_hub import configure_http_backend
+
+    class _Timeout(requests.Session):
+        def request(self, *a, **kw):
+            if kw.get("timeout") is None:
+                kw["timeout"] = (30, 60)
+            return super().request(*a, **kw)
+
+    configure_http_backend(backend_factory=_Timeout)
+
+
+def _why(e: BaseException) -> str:
+    """A plain reason for a failed download."""
+    s = f"{type(e).__name__} {e}".lower()
+    if "ssl" in s or "certificate" in s:
+        return ("a secure connection to huggingface.co was refused (often antivirus 'HTTPS scanning' "
+                "or an office proxy). Turn that off or try another network.")
+    if "nospace" in s or "no space" in s or "errno 28" in s:
+        return "the disk is full. Free about 15 GB."
+    if "timeout" in s or "timed out" in s or "connect" in s or "resolve" in s or "getaddrinfo" in s:
+        return ("huggingface.co can't be reached from this network. Turn off the VPN, try another "
+                "network (phone hotspot), or allow Live Captions in the firewall/antivirus.")
+    return "check the internet connection."
+
+
 def _dir_size(p: Path) -> int:
     total = 0
     for f in p.rglob("*"):
@@ -162,13 +191,14 @@ class Setup:
         except Exception as e:
             log.exception("Setup failed")
             self.error = f"{e.__class__.__name__}: {e}"
-            self.message = "Download stopped. Check the internet connection; it retries when OBS restarts."
+            self.message = "Download stopped: " + _why(e) + " Then press Try again."
         finally:
             self.running = False
             self._dl_dir = None
 
     def _download(self, key: str) -> None:
         from huggingface_hub import hf_hub_download, snapshot_download
+        _hf_timeouts()
         info = MODELS[key]
         target = model_dir(key)
         target.mkdir(parents=True, exist_ok=True)
@@ -181,10 +211,11 @@ class Setup:
                 for repo, fname in info.get("extra", []):
                     hf_hub_download(repo, fname, local_dir=str(target))
                 break
-            except Exception:
+            except Exception as e:
                 if attempt == 2:
                     raise
                 log.warning("Download of %s interrupted, retrying", key, exc_info=True)
+                self.message = f"Retrying ({attempt + 2} of 3): {_why(e)}"
                 time.sleep(5)
         (target / ".complete").write_text(time.strftime("%Y-%m-%d %H:%M:%S"))
         self._dl_dir = None
