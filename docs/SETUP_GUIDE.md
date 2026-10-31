@@ -20,8 +20,8 @@ Project page: **https://github.com/vivekarya2026/live-captions-obs**
 | **Mac with Intel** | Apple menu → **About This Mac** → *Processor: … Intel …* | `LiveCaptions-…-macOS-x86_64.pkg` |
 | **Windows 10 / 11 (64-bit)** | Settings → System → About → *System type: 64-bit* | `LiveCaptions-…-Windows-x64-Setup.exe` |
 
-Every computer needs: **macOS 12+ or Windows 10/11**, about **8 GB free space**, and internet for the
-first start only (about 4 GB downloads once). After that it works offline.
+Every computer needs: **macOS 12+ or Windows 10/11**, about **15 GB free space**, and internet for the
+first start only (about 10 GB downloads once: translation, speech engine, and two speech models). After that it works offline.
 
 | Speed | What to expect |
 |---|---|
@@ -165,7 +165,7 @@ Open the terminal in Cursor: **Terminal → New Terminal** (`` Ctrl+` ``). It op
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cd app
-../.venv/bin/python -m livecaptions --download # one-time download (speech engine + models, ~4 GB)
+../.venv/bin/python -m livecaptions --download # one-time download (speech engine + models, ~10 GB)
 ../.venv/bin/python -m livecaptions --test     # self-test: translates sample sentences
 ../.venv/bin/python -m livecaptions            # opens the window
 ```

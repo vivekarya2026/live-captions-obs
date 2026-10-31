@@ -29,12 +29,12 @@ Run and report:
 |---|---|---|
 | chip | `uname -m` → `arm64` = Apple Silicon, `x86_64` = Intel | `$env:PROCESSOR_ARCHITECTURE` → must be `AMD64` |
 | OS | `sw_vers -productVersion` (needs 12+) | `[Environment]::OSVersion` (Windows 10/11) |
-| free space | `df -h ~` (needs ~8 GB) | `Get-PSDrive C` |
+| free space | `df -h ~` (needs ~15 GB) | `Get-PSDrive C` |
 | Python 3.11 | `python3.11 --version` | `py -3.11 --version` |
 | NVIDIA GPU | (none on Mac) | `nvidia-smi` |
 | OBS | `ls /Applications/OBS.app` | `Test-Path "$env:ProgramFiles\obs-studio"` |
 
-Stop and tell the user if: OS too old, under 8 GB free, or 32-bit Windows.
+Stop and tell the user if: OS too old, under 15 GB free, or 32-bit Windows.
 If Python 3.11 is missing, install it: Mac `brew install python@3.11` (or the python.org 3.11
 installer); Windows `winget install Python.Python.3.11`. Then open a new terminal.
 On an Intel Mac, `python3.11 -c "import platform; print(platform.machine())"` must print `x86_64`.
@@ -70,7 +70,7 @@ cd app
 ../.venv/bin/python -m livecaptions --test
 ```
 
-`--download` takes 10–30 minutes (~4 GB) and also installs PyTorch (Intel Mac: 2.2.2; NVIDIA PC:
+`--download` takes 20–60 minutes (~10 GB) and also installs PyTorch (Intel Mac: 2.2.2; NVIDIA PC:
 the GPU build). Run it in the background and report progress now and then.
 **Check:** `--test` prints `IN:`/`OUT:` lines, and Hindi lines come out as English
 (e.g. `आज हम सब मिलकर सत्संग में सेवा करेंगे।` → `Today we will all do sewa (selfless service) in satsang…`).

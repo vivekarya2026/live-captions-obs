@@ -77,7 +77,7 @@ Outside the app:
 
 | What | Where | Delete it and… |
 |---|---|---|
-| Models (~4 GB) | `~/.livecaptions/models/` | they download again |
+| Models (~8 GB) | `~/.livecaptions/models/` | they download again |
 | PyTorch + speech packages | `~/.livecaptions/pylib/` | they install again on next start |
 | Settings, log, PID | `~/.livecaptions/` (`translator.log`) | settings go back to default |
 | Saved sessions | `Documents/Live Captions/` | your transcripts are gone (keep a copy) |
