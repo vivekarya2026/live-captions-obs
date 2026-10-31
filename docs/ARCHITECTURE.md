@@ -108,6 +108,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Windows installer builds | GitHub Actions builds it on every release | Oct 2026 | medium: **build checked, install not tested on a real PC by us** |
 | Setup from source works | Fresh `git clone`, `.venv`, `pip install`, `--test` on a Mac | Oct 2026 | high (Mac), untested (Windows) |
 | Mic off releases the microphone | Log shows "Microphone released"; macOS mic dot goes off | Oct 2026 | high |
+| First-time download works from zero | Empty data folder, plain HTTPS (Xet off): 0 → 100% for NLLB in ~90 s on a Mac | Oct 31 2026 | high (Mac), **Windows not re-tested** |
 | Vocabulary terms survive translation | `tests/test_vocabulary.py` | each change | high |
 
 When you test something new, add a row. Results get stale: re-test after big updates

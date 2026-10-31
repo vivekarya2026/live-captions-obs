@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import importlib.util
 import logging
+import os
 import platform
 import shutil
 import subprocess
@@ -19,6 +20,14 @@ import sys
 import threading
 import time
 from pathlib import Path
+
+# Plain HTTPS downloads, not Hugging Face's Xet transfer: Xet hangs at 0% on some networks
+# (firewalls, antivirus, proxies) without an error. A read that stalls 30 s fails and retries.
+# Must be set before huggingface_hub is imported anywhere.
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "30")
+os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "30")
+STALL_SECONDS = 60  # no new data for this long: tell the user
 
 from . import paths
 
@@ -95,14 +104,22 @@ class Setup:
         self.on_ready: dict[str, list] = {}
         self._dl_dir: Path | None = None
         self._dl_base = 0
+        self._seen = (0, 0.0)  # (bytes, time) of the last progress
 
     # ---- progress -------------------------------------------------------
     def status(self) -> dict:
         cur = self.current
+        message = self.message
         if self._dl_dir is not None:
             cur = max(0, _dir_size(self._dl_dir) - self._dl_base)
+            now = time.time()
+            if cur != self._seen[0] or not self._seen[1]:
+                self._seen = (cur, now)
+            elif now - self._seen[1] > STALL_SECONDS:
+                message = (f"No data for {int(now - self._seen[1])} s. Check the internet; a VPN, firewall "
+                           "or antivirus may block huggingface.co. It keeps trying.")
         done = min(self.total, self.done + cur) if self.total else 0
-        return {"running": self.running, "stage": self.stage, "message": self.message,
+        return {"running": self.running, "stage": self.stage, "message": message,
                 "error": self.error, "done": done, "total": self.total,
                 "percent": int(100 * done / self.total) if self.total else 100,
                 "ready": {"runtime": runtime_ready(), **{k: model_ready(k) for k in MODELS}}}
@@ -157,7 +174,7 @@ class Setup:
         target.mkdir(parents=True, exist_ok=True)
         self.stage, self.message = key, f"Downloading {info['label']}…"
         log.info(self.message)
-        self._dl_dir, self._dl_base = target, _dir_size(target)
+        self._dl_dir, self._dl_base, self._seen = target, _dir_size(target), (0, 0.0)
         for attempt in range(3):
             try:
                 snapshot_download(info["repo"], local_dir=str(target))

@@ -274,7 +274,8 @@ The Google Docs part is per document, not per computer: on a new computer, only 
 | Windows: *Windows protected your PC* | **More info → Run anyway** |
 | Window says *Live Captions is not running* | start it again (Applications / Start menu / `python -m livecaptions`) |
 | No captions | correct mic chosen and not muted? Mac: System Settings → Privacy & Security → Microphone → allow *Live Captions* (or *OBS*, or *Cursor* when run from Cursor) |
-| Download stopped | press **Try again** in the window; it continues where it stopped |
+| Download stopped | Press **Try again** in the window; it continues where it stopped |
+| Download stays at 0% / says *No data for … s* | Something blocks huggingface.co: turn off the VPN, try another network (e.g. phone hotspot), or allow Live Captions in the antivirus/firewall. Then **Try again**. Needs version 1.0.3 or newer |
 | Captions come late (Intel Mac / PC without NVIDIA) | choose the **0.6B** speech model; close other heavy apps |
 | `python3.11: command not found` / `py -3.11` not found | install Python 3.11 (B1) and open a new terminal |
 | Intel Mac: *A module compiled with NumPy 1.x cannot run in NumPy 2* | `.venv/bin/pip install "numpy<2" --only-binary=:all:` |
