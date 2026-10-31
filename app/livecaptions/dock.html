@@ -148,7 +148,14 @@
       <div id="docsLinked" hidden>
         <div class="row"><span id="docsState" aria-live="polite"></span></div>
         <div class="note" id="docsDetail"></div>
-        <div class="btns"><button class="btn" id="docsOff">Disconnect</button></div>
+        <div class="btns">
+          <button class="btn primary" id="docsWrite">Start writing</button>
+          <label class="row" style="gap:6px;cursor:pointer"><input type="checkbox" id="docsTime"> Time stamps</label>
+        </div>
+        <div class="note" id="docsOld" hidden>To start/stop and switch time stamps from here, update the script in the doc once:
+          <b>Extensions → Apps Script</b>, paste the new script <button class="btn small" id="copyScript2">Copy script</button>, <b>Save</b>,
+          then <b>Deploy → Manage deployments → ✎ → Version: New version → Deploy</b>.</div>
+        <div class="btns"><button class="btn small" id="docsOff">Disconnect</button></div>
       </div>
       <div id="docsSetup">
         <div class="note" style="margin-top:0">Write the original speech and the translation into a Google Doc as people speak.
@@ -289,9 +296,16 @@
       if (g.error) { s = '✕ ' + g.error; det = 'Retrying automatically.'; }
       else if (g.writing === null || g.writing === undefined) { s = '◌ Connecting…'; det = ''; }
       else if (g.writing) { s = '● Writing into “' + (g.doc || 'Google Doc') + '”'; det = `${g.sent} lines sent` + (g.waiting ? ` · ${g.waiting} waiting` : ''); }
-      else { s = '○ Connected to “' + (g.doc || 'Google Doc') + '”'; det = 'Press Start writing in the doc’s Live Captions sidebar.'; }
+      else { s = '○ Connected to “' + (g.doc || 'Google Doc') + '”'; det = 'Press Start writing (here or in the doc’s sidebar).'; }
       $('docsState').textContent = s; $('docsDetail').textContent = det;
       $('sumDocs').textContent = g.error ? 'problem' : g.writing ? 'writing' : 'connected';
+      const w = $('docsWrite'), known = g.writing === true || g.writing === false;
+      w.disabled = !known || g.old_script;
+      w.textContent = g.writing ? 'Stop writing' : 'Start writing';
+      w.classList.toggle('primary', !g.writing);
+      $('docsTime').disabled = g.show_time === null || g.show_time === undefined || g.old_script;
+      if (document.activeElement !== $('docsTime')) $('docsTime').checked = g.show_time !== false;
+      $('docsOld').hidden = !g.old_script;
     } else { $('sumDocs').textContent = 'off'; }
 
     // Now on screen
@@ -326,12 +340,16 @@
     document.body.innerHTML = '<p style="padding:20px">Live Captions has stopped. You can close this window.</p>';
     stopped = true;
   };
-  $('copyScript').onclick = async () => {
+  const copyScript = async (btn) => {
     const txt = await (await fetch('/gdocs/script')).text();
     try { await navigator.clipboard.writeText(txt); }
     catch (e) { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
-    $('copyScript').textContent = 'Copied ✓'; setTimeout(() => $('copyScript').textContent = 'Copy script', 2500);
+    btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = 'Copy script', 2500);
   };
+  $('copyScript').onclick = () => copyScript($('copyScript'));
+  $('copyScript2').onclick = () => copyScript($('copyScript2'));
+  $('docsWrite').onclick = () => act('/gdocs?write=' + (S.gdocs && S.gdocs.writing ? '0' : '1'));
+  $('docsTime').onchange = () => act('/gdocs?time=' + ($('docsTime').checked ? '1' : '0'));
   $('docsConnect').onclick = async () => {
     const link = $('docsLink').value.trim();
     if (!link) return;

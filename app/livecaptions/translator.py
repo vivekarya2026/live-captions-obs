@@ -1146,6 +1146,10 @@ def start_control_server(app: App) -> bool:
                     return self._json({**app.state(), "gdocs_error": err})
                 if q.get("disconnect") == "1":
                     g.disconnect()
+                if q.get("write") in ("0", "1"):
+                    g.command(writing=q["write"] == "1")
+                if q.get("time") in ("0", "1"):
+                    g.command(show_time=q["time"] == "1")
                 return self._json(app.state())
             if url.path == "/gdocs/script":
                 return self._send(200, GDOCS_SCRIPT.read_bytes(), "text/plain; charset=utf-8")

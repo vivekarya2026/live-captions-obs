@@ -89,3 +89,21 @@ sed -e "s/@VERSION@/$VERSION/g" -e "s/@ARCH@/$ARCH/g" "$HERE/distribution.xml" >
 productbuild --distribution "$BUILD/distribution.xml" --resources "$BUILD/resources" \
   --package-path "$BUILD" "$OUT"
 echo "== built $OUT ($(du -h "$OUT" | cut -f1))"
+
+# 5. The same installer inside a .dmg (what Mac users expect to download)
+DMG="${OUT%.pkg}.dmg"
+STAGE="$BUILD/dmg"
+rm -rf "$STAGE" "$DMG" && mkdir -p "$STAGE"
+cp "$OUT" "$STAGE/Install Live Captions.pkg"
+cat > "$STAGE/Read me.txt" <<EOF
+Live Captions $VERSION for Macs with $CHIP
+
+1. Quit OBS if it is open.
+2. Double-click "Install Live Captions.pkg".
+   If macOS says it can't be opened: System Settings -> Privacy & Security -> Open Anyway.
+3. The Live Captions window opens and downloads the models once (about 5 GB).
+
+Guide: https://github.com/vivekarya2026/live-captions-obs/blob/main/docs/SETUP_GUIDE.md
+EOF
+hdiutil create -quiet -volname "Live Captions $VERSION" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DMG"
+echo "== built $DMG ($(du -h "$DMG" | cut -f1))"

@@ -16,8 +16,8 @@ Project page: **https://github.com/vivekarya2026/live-captions-obs**
 
 | Computer | How to check | Installer file |
 |---|---|---|
-| **Mac with Apple Silicon** (M1, M2, M3, M4…) | Apple menu → **About This Mac** → *Chip: Apple M…* | `LiveCaptions-…-macOS-arm64.pkg` |
-| **Mac with Intel** | Apple menu → **About This Mac** → *Processor: … Intel …* | `LiveCaptions-…-macOS-x86_64.pkg` |
+| **Mac with Apple Silicon** (M1, M2, M3, M4…) | Apple menu → **About This Mac** → *Chip: Apple M…* | `LiveCaptions-…-macOS-arm64.dmg` (or `.pkg`) |
+| **Mac with Intel** | Apple menu → **About This Mac** → *Processor: … Intel …* | `LiveCaptions-…-macOS-x86_64.dmg` (or `.pkg`) |
 | **Windows 10 / 11 (64-bit)** | Settings → System → About → *System type: 64-bit* | `LiveCaptions-…-Windows-x64-Setup.exe` |
 
 Every computer needs: **macOS 12+ or Windows 10/11**, about **10 GB free space**, and internet for the
@@ -44,16 +44,18 @@ before installing. OBS is optional.
 ### A2. Mac (Apple Silicon or Intel)
 
 1. Quit OBS if it is open.
-2. Double-click the downloaded `.pkg`.
+2. Double-click the downloaded `.dmg`. A window opens: double-click **Install Live Captions.pkg** in it.
+   (Downloaded the `.pkg` instead? Just double-click that.)
 3. If macOS says *“can't be opened because Apple cannot check it”*:
    1. press **Done**;
    2. open **System Settings → Privacy & Security**;
-   3. scroll down and press **Open Anyway** next to *“LiveCaptions… was blocked”*;
-   4. confirm with your password, and double-click the `.pkg` again.
+   3. scroll down and press **Open Anyway** next to *“Install Live Captions… was blocked”*;
+   4. confirm with your password, and double-click the installer again.
 4. Click **Continue → Agree → Install**, enter your Mac password.
 5. The **Live Captions** window opens in your browser and starts the one-time download
    (progress bar, 10–30 minutes). Keep the computer awake and online.
 6. When macOS asks to use the **microphone**, click **Allow**.
+7. Eject the *Live Captions* disk in Finder; you can delete the `.dmg`.
 
 Next time: **Applications → Live Captions** (or just open OBS).
 
@@ -241,7 +243,8 @@ Short version (full guide with every screen explained: [GOOGLE_DOCS.md](GOOGLE_D
    **Authorize** (→ *Advanced → Go to … (unsafe) → Allow*).
 4. Reload the doc → **Live Captions → Open sidebar** → **Copy connection link**.
 5. Paste the link into the Live Captions window (**Google Docs → Connect**).
-6. Each time: sidebar → **Start writing** … **Stop writing**.
+6. Each time: Live Captions window → **Google Docs** → **Start writing** … **Stop writing**
+   (or the same buttons in the doc's sidebar). Untick **Time stamps** to leave out the times.
 
 The Google Docs part is per document, not per computer: on a new computer, only step 5 is needed
 (paste the same connection link).

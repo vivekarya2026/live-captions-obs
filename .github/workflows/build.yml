@@ -24,7 +24,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
-          path: dist/*.pkg
+          path: |
+            dist/*.pkg
+            dist/*.dmg
 
   windows:
     runs-on: windows-latest
@@ -57,8 +59,8 @@ jobs:
           files: dist/*
           body: |
             **Download for your computer:**
-            - Mac (Apple Silicon M1 or newer): `LiveCaptions-…-macOS-arm64.pkg`
-            - Mac (Intel processor): `LiveCaptions-…-macOS-x86_64.pkg`
+            - Mac (Apple Silicon M1 or newer): `LiveCaptions-…-macOS-arm64.dmg` (or `.pkg`)
+            - Mac (Intel processor): `LiveCaptions-…-macOS-x86_64.dmg` (or `.pkg`)
             - Windows 10/11 (64-bit): `LiveCaptions-…-Windows-x64-Setup.exe`
 
             These installers are not signed by Apple/Microsoft. See the

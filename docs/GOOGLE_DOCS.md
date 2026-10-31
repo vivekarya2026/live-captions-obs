@@ -43,13 +43,37 @@ The audio stays on your computer; only the text is sent.
 Google. Nothing can be written without the secret key in your connection link.
 If you shared the link by mistake: sidebar → Security → **Make a new link**.*
 
-## Every time
+## Every time (no sidebar needed)
 
 1. Start Live Captions (or OBS) and choose the language.
-2. Open the doc → **Live Captions → Open sidebar** → **Start writing**.
-   A heading with the date and time is added, then the captions follow.
-3. **Stop writing** when you are done. (The sessions are also saved in
+2. In the Live Captions window → **Google Docs** → **Start writing**.
+   A heading with the date is added to the doc, then the captions follow.
+3. **Time stamps**: untick it to leave out the time (e.g. `10:31:02`) in front of each line.
+   You can switch it any time, even while writing; it applies to the next lines.
+4. **Stop writing** when you are done. (The sessions are also saved in
    Documents → Live Captions, as always.)
+
+You don't need to open the doc for this. The sidebar in the doc
+(**Live Captions → Open sidebar**) has the same Start/Stop button and Time stamps box,
+plus the last lines, if you'd rather work from there.
+
+With time stamps:
+
+> **10:31:02 · Hindi**   आज सत्संग में सेवा और सिमरन की बात होगी।
+> Today the satsang will be about sewa and simran.
+
+Without:
+
+> **Hindi**   आज सत्संग में सेवा और सिमरन की बात होगी।
+> Today the satsang will be about sewa and simran.
+
+### Already set up a doc before version 1.0.7?
+
+Update its script once, so the app can start/stop it and switch time stamps:
+**Extensions → Apps Script** → paste the new script (**Copy script** in the app) → **Save** →
+**Deploy → Manage deployments** → ✎ (edit) → *Version*: **New version** → **Deploy**.
+The connection link stays the same. Until then the app says *update the script* and you
+use the sidebar as before.
 
 Lines are added at the **end** of the document, so you can type notes above them
 while they come in. If the internet drops for a moment, lines wait and are sent

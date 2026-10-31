@@ -60,6 +60,7 @@ function getStatus() {
   var lastSeen = Number(PROPS.getProperty('lastSeen') || 0);
   return {
     writing: PROPS.getProperty('writing') === '1',
+    showTime: showTime_(),
     link: url ? url + '?k=' + key_() : '',
     count: Number(PROPS.getProperty('count') || 0),
     appOnline: Date.now() - lastSeen < 20000,
@@ -82,10 +83,18 @@ function setWriting(on) {
   PROPS.setProperty('writing', on ? '1' : '0');
   if (on) {
     var body = doc_().getBody();
-    var title = 'Live captions · ' +
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'd MMM yyyy, HH:mm');
+    var fmt = showTime_() ? 'd MMM yyyy, HH:mm' : 'd MMM yyyy';
+    var title = 'Live captions · ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), fmt);
     body.appendParagraph(title).setHeading(DocumentApp.ParagraphHeading.HEADING2);
   }
+  return getStatus();
+}
+
+// Time in front of each line (and in the heading): on unless switched off
+function showTime_() { return PROPS.getProperty('showTime') !== '0'; }
+
+function setShowTime(on) {
+  PROPS.setProperty('showTime', on ? '1' : '0');
   return getStatus();
 }
 
@@ -101,14 +110,18 @@ function newKey() {
 function doGet(e) {
   if (!checkKey_(e && e.parameter && e.parameter.k)) return json_({ ok: false, error: 'wrong key: copy the link from the sidebar again' });
   PROPS.setProperty('lastSeen', String(Date.now()));
-  return json_({ ok: true, writing: PROPS.getProperty('writing') === '1', doc: docName_() });
+  return json_(reply_());
 }
 
+// The app sends { k, lines: [...], cmd: 'start'|'stop' (optional), showTime: true|false (optional) }
 function doPost(e) {
   var data;
   try { data = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad request' }); }
   if (!checkKey_(data.k)) return json_({ ok: false, error: 'wrong key: copy the link from the sidebar again' });
   PROPS.setProperty('lastSeen', String(Date.now()));
+  if (typeof data.showTime === 'boolean') setShowTime(data.showTime);
+  if (data.cmd === 'start' && PROPS.getProperty('writing') !== '1') setWriting(true);
+  if (data.cmd === 'stop') setWriting(false);
   var writing = PROPS.getProperty('writing') === '1';
   var lines = (data.lines || []).slice(0, 50);
   if (writing && lines.length) {
@@ -116,7 +129,8 @@ function doPost(e) {
     lock.waitLock(20000);
     try {
       var body = doc_().getBody();
-      for (var i = 0; i < lines.length; i++) appendLine_(body, lines[i]);
+      var time = showTime_();
+      for (var i = 0; i < lines.length; i++) appendLine_(body, lines[i], time);
       PROPS.setProperty('count', String(Number(PROPS.getProperty('count') || 0) + lines.length));
       var cache = CacheService.getScriptCache();
       var recent = JSON.parse(cache.get('recent') || '[]').concat(lines).slice(-RECENT_MAX);
@@ -125,16 +139,22 @@ function doPost(e) {
       lock.releaseLock();
     }
   }
-  return json_({ ok: true, writing: writing, doc: docName_() });
+  return json_(reply_());
 }
 
-// One sentence:   10:31:02 · Hindi   आज सत्संग में ...      (small, grey)
+function reply_() {
+  return { ok: true, writing: PROPS.getProperty('writing') === '1', showTime: showTime_(), doc: docName_() };
+}
+
+// One sentence:   10:31:02 · Hindi   आज सत्संग में ...      (small, grey; time only if on)
 //                 Today in the satsang ...                  (normal text)
-function appendLine_(body, l) {
+function appendLine_(body, l, time) {
   var src = String(l.src || '').slice(0, 2000);
   var out = String(l.out || '').slice(0, 2000);
-  var head = String(l.t || '') + (l.lang ? ' · ' + l.lang : '');
-  var p1 = body.appendParagraph(head + '   ' + src);
+  var stamp = time ? String(l.t || '') : '';
+  var lang = String(l.lang || '');
+  var head = stamp && lang ? stamp + ' · ' + lang : stamp || lang;
+  var p1 = body.appendParagraph((head ? head + '   ' : '') + src);
   p1.setHeading(DocumentApp.ParagraphHeading.NORMAL).setSpacingBefore(6).setSpacingAfter(0);
   var t1 = p1.editAsText();
   t1.setFontSize(9).setForegroundColor('#6b6f76').setBold(false).setItalic(false);
@@ -184,7 +204,9 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 '<h2>Live Captions</h2>' +
 '<div id="status" class="status">Loading…</div>' +
 '<button id="toggle" class="primary" disabled>Start writing</button>' +
-'<div class="small" id="hint">Each sentence is added at the end of this document: the original speech (small, grey) and the translation under it.</div>' +
+'<label class="small" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="showTime" style="width:auto"> Time stamps (e.g. 10:31:02) in front of each line</label>' +
+'<div class="small" id="hint">Each sentence is added at the end of this document: the original speech (small, grey) and the translation under it. ' +
+'You can also start, stop and switch time stamps from the Live Captions app; this sidebar can stay closed.</div>' +
 '<div id="setup" hidden>' +
 '  <b>Connect the app</b>' +
 '  <div class="small">Copy this link and paste it in the Live Captions app → <i>Google Docs</i> → <i>Connect</i>.</div>' +
@@ -212,10 +234,10 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 ' else if(s.writing){st.className="status ok";st.innerHTML="<b>● Writing into this document</b>"+s.count+" lines so far";}' +
 ' else{st.className="status";st.innerHTML="<b>App connected</b>Press Start to write the captions here.";}' +
 ' t.disabled=!s.link;t.textContent=s.writing?"Stop writing":"Start writing";t.className=s.writing?"stop":"primary";' +
-' $("needUrl").hidden=!!s.link;$("setup").hidden=!s.link;' +
+' $("needUrl").hidden=!!s.link;$("setup").hidden=!s.link;$("showTime").checked=s.showTime;' +
 ' if($("link").value!==s.link)$("link").value=s.link;' +
 ' var r=s.recent||[];$("recentBox").hidden=!r.length;' +
-' $("recent").innerHTML=r.slice().reverse().map(function(l){return "<div class=line><small>"+esc(l.t||"")+" · "+esc(l.src||"")+"</small>"+esc(l.out||"")+"</div>"}).join("");' +
+' $("recent").innerHTML=r.slice().reverse().map(function(l){return "<div class=line><small>"+(s.showTime&&l.t?esc(l.t)+" · ":"")+esc(l.src||"")+"</small>"+esc(l.out||"")+"</div>"}).join("");' +
 '}' +
 'function fail(e){busy=false;$("status").className="status err";$("status").innerHTML="<b>Problem</b>"+esc(e&&e.message||e);}' +
 'function poll(){google.script.run.withSuccessHandler(render).withFailureHandler(fail).getStatus();}' +
@@ -223,6 +245,7 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 ' google.script.run.withSuccessHandler(render).withFailureHandler(fail).setWriting(!S.writing);};' +
 '$("copy").onclick=function(){var i=$("link");i.select();try{navigator.clipboard.writeText(i.value)}catch(e){document.execCommand("copy")}' +
 ' $("copy").textContent="Copied ✓";setTimeout(function(){$("copy").textContent="Copy connection link"},2000);};' +
+'$("showTime").onchange=function(){google.script.run.withSuccessHandler(render).withFailureHandler(fail).setShowTime($("showTime").checked);};' +
 '$("saveUrl").onclick=function(){google.script.run.withSuccessHandler(render).withFailureHandler(fail).setWebAppUrl($("url").value);};' +
 '$("newKey").onclick=function(){if(confirm("Make a new link? The app must be connected again with the new link."))' +
 ' google.script.run.withSuccessHandler(render).withFailureHandler(fail).newKey();};' +

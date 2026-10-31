@@ -31,8 +31,8 @@ OBS is optional. If you use it, install [OBS Studio](https://obsproject.com/) **
 
 Open the [latest release](https://github.com/vivekarya2026/live-captions-obs/releases/latest) and download:
 
-- **Mac with Apple Silicon (M1 or newer)**: `LiveCaptions-…-macOS-arm64.pkg`
-- **Mac with Intel processor**: `LiveCaptions-…-macOS-x86_64.pkg`
+- **Mac with Apple Silicon (M1 or newer)**: `LiveCaptions-…-macOS-arm64.dmg` (or `.pkg`)
+- **Mac with Intel processor**: `LiveCaptions-…-macOS-x86_64.dmg` (or `.pkg`)
 - **Windows**: `LiveCaptions-…-Windows-x64-Setup.exe`
 
 ## Mac

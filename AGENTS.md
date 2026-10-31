@@ -42,8 +42,8 @@ On an Intel Mac, `python3.11 -c "import platform; print(platform.machine())"` mu
 ### 2. Choose the path
 
 - **User just wants to use it** → installer (Path A in `docs/SETUP_GUIDE.md`). Download the right
-  file from the latest release (`gh release download -R vivekarya2026/live-captions-obs -p '*arm64.pkg'`
-  / `'*x86_64.pkg'` / `'*Setup.exe'`) and open it for the user. The installer needs the user's
+  file from the latest release (`gh release download -R vivekarya2026/live-captions-obs -p '*arm64.dmg'`
+  / `'*x86_64.dmg'` / `'*Setup.exe'`) and open it for the user. The installer needs the user's
   password and clicks; guide them. Then skip to step 6.
 - **User works in Cursor / wants to change things** → from source, steps 3–6.
 
