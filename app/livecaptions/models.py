@@ -52,6 +52,40 @@ PACK_URL = "https://github.com/vivekarya2026/live-captions-obs/releases/download
 PACK_CHECK = {"nllb": "model.bin", "qwen-0.6b": "model.safetensors"}
 
 
+def _fetch(url: str, dest: Path, tries: int = 8) -> None:
+    """Download with resume: a dropped connection continues where it stopped."""
+    import ssl
+    import urllib.request
+    try:
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        ctx = ssl.create_default_context()
+    for attempt in range(tries):
+        have = dest.stat().st_size if dest.exists() else 0
+        req = urllib.request.Request(url, headers={"Range": f"bytes={have}-"} if have else {})
+        try:
+            with urllib.request.urlopen(req, timeout=60, context=ctx) as r:
+                if have and r.status != 206:  # server ignored the range: start over
+                    have = 0
+                total = have + int(r.headers.get("Content-Length") or 0)
+                with open(dest, "ab" if have else "wb") as f:
+                    shutil.copyfileobj(r, f, 1 << 20)
+            if not total or dest.stat().st_size >= total:
+                return
+        except urllib.error.HTTPError as e:
+            if e.code == 416:  # range past the end: already complete
+                return
+            if attempt == tries - 1:
+                raise
+        except OSError:
+            if attempt == tries - 1:
+                raise
+        log.warning("Download of %s interrupted at %d bytes, resuming", url, dest.stat().st_size if dest.exists() else 0)
+        time.sleep(3)
+    raise OSError(f"download of {url} kept stopping")
+
+
 def _find_pack(key: str) -> Path | None:
     if key not in PACKS:
         return None
@@ -251,16 +285,16 @@ class Setup:
                 self.message = f"huggingface.co didn't work, downloading {info['label']} from GitHub instead…"
                 zip_path = target / ".pack.zip"
                 try:
-                    from .install_localvocal import _download as fetch
-                    fetch(PACK_URL.format(key=key), zip_path)
+                    _fetch(PACK_URL.format(key=key), zip_path)
                     self._dl_dir, self.current = None, info["size"]  # don't count the zip twice
                     self.message = f"Unpacking {info['label']}…"
-                    _unpack(zip_path, target, key)
+                    try:
+                        _unpack(zip_path, target, key)
+                    finally:
+                        zip_path.unlink(missing_ok=True)  # kept on network errors so Try again resumes
                 except Exception:
                     log.warning("GitHub download of %s failed too", key, exc_info=True)
                     raise e from None
-                finally:
-                    zip_path.unlink(missing_ok=True)
         (target / ".complete").write_text(time.strftime("%Y-%m-%d %H:%M:%S"))
         self._dl_dir, self.current = None, 0.0
         self.done += info["size"]
