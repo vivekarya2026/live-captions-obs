@@ -35,6 +35,8 @@ microphone ─► Qwen3-ASR (speech → text, with the vocabulary as context)
 | `app/livecaptions/data/google-docs/LiveCaptions.gs` | the Google Docs sidebar script |
 | `obs/live_captions.lua` | OBS script: starts the app with OBS, adds the caption overlay |
 | `installer/` | Mac `.pkg` and Windows `.exe` builders (GitHub Actions builds both on a `v*` tag) |
+| `docs/` | user guides ([setup](docs/SETUP_GUIDE.md), [install](docs/INSTALL.md), [Google Docs](docs/GOOGLE_DOCS.md)) and the [project map](docs/ARCHITECTURE.md) |
+| `AGENTS.md` | instructions for coding agents (Cursor, Claude Code, Codex…): set up, fix, change, release |
 
 ### Run from source (developers)
 

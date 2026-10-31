@@ -1,6 +1,7 @@
 # Live Captions: step-by-step setup on any computer
 
-This guide gets Live Captions running on a new computer. Follow **one** path:
+This guide gets Live Captions running on a new computer. Pick **one** path.
+Want to know how the project is built? See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 | Path | For | Time | You need |
 |---|---|---|---|
@@ -75,8 +76,9 @@ Now go to **[Step C. First use](#step-c-first-use-every-computer)**.
 
 ## Path B. Set it up with Cursor from GitHub
 
-Cursor is a code editor with a built-in AI agent. You open the project from GitHub in Cursor and
-the agent does the setup for you (or you type the commands yourself, B5).
+Cursor is a code editor with a built-in AI helper (the *agent*). You open the project from GitHub in
+Cursor, give the agent one prompt, and it does the setup for you. You can also type the commands
+yourself (B5).
 
 ### B1. Install the tools (once per computer)
 
@@ -101,42 +103,39 @@ Use Python **3.11** exactly (not 3.12/3.13): the speech engine is tested with 3.
 
 You now see the project files on the left (`app`, `docs`, `obs`, `installer`…).
 
-### B3. Let the Cursor agent do the setup
+### B3. Let the Cursor agent do everything
 
-1. Open the agent chat: `Cmd+L` (Mac) or `Ctrl+L` (Windows), and make sure the mode is **Agent**.
-2. Copy the prompt for your computer below, paste it into the chat, and press Enter.
-3. When the agent wants to run a command, click **Run** / **Accept**. Answer its questions.
+The project has a file called [`AGENTS.md`](../AGENTS.md). It is a full instruction sheet for
+coding agents: how to check your computer, install, test, connect OBS, fix problems and release.
+Cursor's agent reads it by itself. So one prompt is enough, on any computer.
 
-**Mac with Apple Silicon**
-
-```
-Set up Live Captions from this repo on my Mac (Apple Silicon). Follow docs/SETUP_GUIDE.md, path B5 for Mac:
-check Python 3.11 is installed, create .venv in the project folder, install requirements.txt,
-download the models (python -m livecaptions --download from the app folder),
-run the self-test (--test), then start the app so the window opens. If OBS is installed, also run the OBS setup step.
-Tell me after each step what happened, and fix any errors you hit.
-```
-
-**Mac with Intel processor**
+1. Open the agent chat: `Cmd+L` (Mac) or `Ctrl+L` (Windows). Make sure the mode is **Agent**.
+2. Paste this prompt and press Enter:
 
 ```
-Set up Live Captions from this repo on my Intel Mac. Follow docs/SETUP_GUIDE.md, path B5 for Intel Mac:
-check Python 3.11 is installed (x86_64), create .venv in the project folder, install requirements.txt
-together with "numpy<2" using --only-binary=:all: (PyTorch 2.2.2 is the last version for Intel Macs
-and needs NumPy 1.x), download the models (--download), run the self-test (--test), then start
-the app so the window opens. Use the 0.6B speech model. If OBS is installed, also run the OBS setup step.
-Tell me after each step what happened, and fix any errors you hit.
+Set up Live Captions on this computer by yourself. Follow AGENTS.md, Task A, from step 1 to step 9.
+First check what computer this is (Apple Silicon Mac, Intel Mac or Windows) and use the matching
+commands. Install from source in this folder, download the models, run the self-test, and start the
+app. If OBS is installed, ask me to quit it, then connect it. Don't skip any check. After each step,
+tell me in one or two plain sentences what you did and what happened. Ask me before anything that
+needs my password, deletes data, or changes OBS. At the end, tell me how to start it next time and
+anything you couldn't check.
 ```
 
-**Windows**
+3. When the agent wants to run a command, click **Run** (or **Accept**). Answer its questions.
+4. The model download takes 10–30 minutes. You can leave it running.
 
-```
-Set up Live Captions from this repo on my Windows PC. Follow docs/SETUP_GUIDE.md, path B5 for Windows:
-check Python 3.11 is installed (py -3.11), create .venv in the project folder, install
-requirements.txt, download the models (--download), run the self-test (--test), then start the app.
-Tell me whether this PC has an NVIDIA graphics card (the app then uses the GPU build of PyTorch).
-If OBS is installed, also run the OBS setup step. Tell me after each step what happened, and fix any errors.
-```
+Other prompts that work the same way:
+
+| You want to… | Paste this |
+|---|---|
+| Just install the ready-made app | `Follow AGENTS.md Task A, but use the installer path: download the right installer for this computer from the latest GitHub release and help me install it.` |
+| Fix a problem | `Live Captions isn't working: <what you see>. Follow AGENTS.md Task B.` |
+| Change something | `<the change you want>. Follow AGENTS.md Task C and run the tests.` |
+| Publish a new version | `Release a new version of Live Captions. Follow AGENTS.md Task D.` |
+
+**Using a different coding agent** (Claude Code, Codex, Copilot…)? Most of them read `AGENTS.md` too.
+If yours doesn't, start the prompt with: *Read AGENTS.md in this folder first.*
 
 **Or: build an installer on this computer** (to copy to other computers without internet to GitHub)
 
