@@ -16,6 +16,12 @@ jobs:
         arch: [arm64, x86_64]
     steps:
       - uses: actions/checkout@v4
+      - name: Google sign-in client (from the GOOGLE_OAUTH_CLIENT secret)
+        shell: bash
+        env:
+          CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT }}
+        run: |
+          if [ -n "$CLIENT" ]; then printf '%s' "$CLIENT" > app/livecaptions/data/google-docs/oauth_client.json; echo "added"; else echo "::warning::GOOGLE_OAUTH_CLIENT secret not set: Google Docs sign-in is off in this build"; fi
       - name: Rosetta (for the Intel build)
         if: matrix.arch == 'x86_64'
         run: /usr/sbin/softwareupdate --install-rosetta --agree-to-license || true
@@ -32,6 +38,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Google sign-in client (from the GOOGLE_OAUTH_CLIENT secret)
+        shell: bash
+        env:
+          CLIENT: ${{ secrets.GOOGLE_OAUTH_CLIENT }}
+        run: |
+          if [ -n "$CLIENT" ]; then printf '%s' "$CLIENT" > app/livecaptions/data/google-docs/oauth_client.json; echo "added"; else echo "::warning::GOOGLE_OAUTH_CLIENT secret not set: Google Docs sign-in is off in this build"; fi
       - name: Install Inno Setup
         shell: pwsh
         run: |

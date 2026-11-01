@@ -233,21 +233,16 @@ on Windows). Or ask the agent: *“Start Live Captions.”*
 **With OBS:** just open OBS. The captions overlay is added to your scene; the panel is under
 **Docks → Live Captions** (OBS 30+: **View → Docks**).
 
-### Google Docs (optional, once per document)
+### Google Docs (optional)
 
-Short version (full guide with every screen explained: [GOOGLE_DOCS.md](GOOGLE_DOCS.md)):
+Full guide: [GOOGLE_DOCS.md](GOOGLE_DOCS.md).
 
-1. Open the Google Doc → **Extensions → Apps Script**.
-2. Replace the code with the script from the Live Captions window (**Google Docs → Copy script**), **Save**.
-3. **Deploy → New deployment → Web app**, *Execute as: Me*, *Who has access: Anyone* → **Deploy** →
-   **Authorize** (→ *Advanced → Go to … (unsafe) → Allow*).
-4. Reload the doc → **Live Captions → Open sidebar** → **Copy connection link**.
-5. Paste the link into the Live Captions window (**Google Docs → Connect**).
-6. Each time: Live Captions window → **Google Docs** → **Start writing** … **Stop writing**
-   (or the same buttons in the doc's sidebar). Untick **Time stamps** to leave out the times.
+1. Live Captions window → **Google Docs** → **Sign in with Google** (once per computer)
+   → choose your account → **Allow** (if Google warns *unverified app*: **Advanced → Go to Live Captions**).
+2. **Start writing**: each session goes into its own new doc in your Google Drive (**Open the doc**).
+3. Untick **Time stamps** to leave out the times. **Stop writing** when done.
 
-The Google Docs part is per document, not per computer: on a new computer, only step 5 is needed
-(paste the same connection link).
+No script in the doc, no links to copy.
 
 ---
 
@@ -257,7 +252,7 @@ The Google Docs part is per document, not per computer: on a new computer, only 
 |---|---|
 | Same version everywhere | download the installers from the same release page (the version is in the file name) |
 | Computers without fast internet | copy the models instead of downloading: copy the folder `~/.livecaptions/models` (Mac) or `%USERPROFILE%\.livecaptions\models` (Windows) from a set-up computer to the same place on the new one, *then* install |
-| Same Google Doc from two computers | paste the same connection link in both; only start writing on one at a time |
+| Google Docs on several computers | sign in with Google on each; each makes its own docs |
 | Update | install the newer release over the old one (settings and models stay), or in Cursor: *“Update to the newest version from GitHub”* |
 
 ## Uninstall

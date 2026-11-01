@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import html
 import json
 import logging
 import os
@@ -54,7 +55,6 @@ TRANSCRIPTS = DATA / "transcripts"
 # One folder per session: Documents/Live Captions/<date>/<time> <mode>/
 SESSIONS_DIR = paths.SESSIONS
 HINGLISH_LEXICON = VOCAB_DIR / "hinglish_lexicon.json"
-GDOCS_SCRIPT = paths.RESOURCES / "google-docs" / "LiveCaptions.gs"  # pasted into Google Docs
 NO_TEXT_SOURCE = "(file output only)"
 QWEN_MODEL_FILE = DATA / "speech_model.txt"   # qwen-0.6b (default) or qwen-1.7b
 
@@ -1093,17 +1093,29 @@ def start_control_server(app: App) -> bool:
             # Only our own window / the OBS dock may use this server: refuse other
             # websites (they could e.g. send the captions to their own "Google Doc").
             host = (self.headers.get("Host") or "").split(":")[0]
+            url = urlparse(self.path)
+            q = {k: v[0] for k, v in parse_qs(url.query).items()}
+            # Google's sign-in sends the browser back here from accounts.google.com (cross-site).
+            # Allowed only with the one-time state of the sign-in this app started.
+            if url.path == "/gdocs/oauth" and host in ("127.0.0.1", "localhost") \
+                    and app.gdocs and app.gdocs.expects(q.get("state", "")):
+                err = app.gdocs.finish_sign_in(q.get("state", ""), q.get("code", ""), q.get("error", ""))
+                msg = ("<h2>✓ Signed in</h2><p>You can close this tab and go back to the Live Captions window.</p>"
+                       if not err else "<h2>Sign-in didn't work</h2><p>" + html.escape(err) + "</p>")
+                return self._send(200, ("<!doctype html><meta charset=utf-8><title>Live Captions</title>"
+                                        "<body style='font:15px system-ui;padding:30px'>" + msg).encode(),
+                                  "text/html; charset=utf-8")
             if host not in ("127.0.0.1", "localhost") or \
                     self.headers.get("Sec-Fetch-Site") in ("cross-site", "same-site"):
                 return self._send(403, b"forbidden", "text/plain")
-            url = urlparse(self.path)
-            q = {k: v[0] for k, v in parse_qs(url.query).items()}
             busy = app.status == "switching"
             p = app.pipeline
             if url.path in ("/", "/panel", "/dock"):
                 return self._send(200, (HERE / "dock.html").read_bytes(), "text/html; charset=utf-8")
             if url.path == "/session/new":
                 p.recorder.dir = None  # next caption opens a new folder
+                if app.gdocs:
+                    app.gdocs.new_session()  # and a new Google Doc
                 return self._json({"ok": True})
             if url.path == "/session/open":
                 paths.open_folder(p.recorder.dir or SESSIONS_DIR)
@@ -1141,18 +1153,26 @@ def start_control_server(app: App) -> bool:
                 return self._json(app.state())
             if url.path == "/gdocs":
                 g = app.gdocs
-                if "link" in q:
-                    err = g.connect(q["link"])
-                    return self._json({**app.state(), "gdocs_error": err})
-                if q.get("disconnect") == "1":
-                    g.disconnect()
+                if q.get("signin") == "1":
+                    try:
+                        link = g.sign_in_url(f"http://127.0.0.1:{CONTROL_PORT}/gdocs/oauth")
+                    except Exception as e:
+                        return self._json({**app.state(), "gdocs_error": str(e)})
+                    import webbrowser
+                    webbrowser.open(link)  # the user's own browser (also from the OBS dock)
+                    return self._json({**app.state(), "signin_url": link})
+                if q.get("signout") == "1":
+                    g.sign_out()
                 if q.get("write") in ("0", "1"):
                     g.command(writing=q["write"] == "1")
                 if q.get("time") in ("0", "1"):
                     g.command(show_time=q["time"] == "1")
                 return self._json(app.state())
-            if url.path == "/gdocs/script":
-                return self._send(200, GDOCS_SCRIPT.read_bytes(), "text/plain; charset=utf-8")
+            if url.path == "/gdocs/open":
+                if app.gdocs and app.gdocs.doc_url():
+                    import webbrowser
+                    webbrowser.open(app.gdocs.doc_url())
+                return self._json({"ok": True})
             if url.path == "/quit":
                 app.quit = True
                 return self._json({"ok": True})

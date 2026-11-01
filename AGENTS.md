@@ -99,8 +99,9 @@ Suggest the **0.6B** speech model on Intel Macs and PCs without NVIDIA.
 ### 8. Google Docs (only if asked)
 
 Follow `docs/GOOGLE_DOCS.md`. The Google steps happen in the user's browser and account: walk
-them through it; you can't do those clicks for them. On a second computer only the
-**connection link** is needed (paste it in the window → Google Docs → Connect).
+them through it (window → Google Docs → **Sign in with Google**); you can't do those clicks for them.
+If the window says sign-in *isn't set up*, the maintainer must do the one-time Google Cloud
+setup at the end of `docs/GOOGLE_DOCS.md`.
 
 ### 9. Finish
 
@@ -141,7 +142,7 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 
 ## Never
 
-- Never commit or print secrets: the Google Docs connection link (`?k=…`) is a password.
+- Never commit or print secrets: the Google sign-in token (`~/.livecaptions/google_account.json`) is a password; the OAuth client JSON only goes in the `GOOGLE_OAUTH_CLIENT` GitHub secret.
 - Never delete `Documents/Live Captions` (the user's transcripts) or `~/.livecaptions/models`
   without asking.
 - Never edit OBS settings while OBS is open.

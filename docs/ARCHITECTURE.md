@@ -60,7 +60,7 @@ flowchart TD
 | `paths.py` | Every folder the app uses | never, unless a folder moves |
 | `dock.html`, `data/overlay.html` | The window/dock page, and the on-stream caption overlay | how they look |
 | `data/vocabulary/` | The vocabulary sheet, Hindi terms, blocked words, Hinglish lexicon | **the vocabulary** (Excel sheet; changes apply live) |
-| `data/google-docs/LiveCaptions.gs` | The script pasted into a Google Doc | the Google Docs sidebar |
+| `data/google-docs/oauth_client.json` | Google sign-in client (added by CI from a secret, not in git) | Sign in with Google |
 
 Outside the app:
 
@@ -96,7 +96,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Intel Macs pinned to PyTorch 2.2.2 + NumPy 1.x, CPU only | 2.2.2 is the last Intel Mac build | if Intel support is dropped |
 | Intel `.pkg` built on Apple Silicon via Rosetta | GitHub is retiring its Intel Mac machines | if the Rosetta build breaks |
 | The window is a local web page | Works the same on Mac, Windows and inside OBS; no UI toolkit to install | never |
-| Google Docs through an Apps Script web app with a secret key | A browser page can't talk to a local app; the key stops others writing | if Google changes Apps Script |
+| Google Docs through Sign in with Google (OAuth desktop + PKCE, scope drive.file) and the Docs API | The Apps Script web app was 3 minutes of setup per doc and broke with "page not found"; drive.file sees only our own docs and needs no Google review | if many users outside the test list need it: publish the app |
 | Not signed by Apple/Microsoft | Signing costs money every year; the guide explains the one-time prompt | if many users get stuck on the prompt |
 
 ## 5. What has been tested (and what hasn't)

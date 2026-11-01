@@ -8,3 +8,5 @@ __pycache__/
 *.tmp
 # models and runtime data live in ~/.livecaptions, never in the repo
 models/
+# Real client JSON is added by CI from a secret
+app/livecaptions/data/google-docs/oauth_client.json
