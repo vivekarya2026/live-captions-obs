@@ -99,9 +99,9 @@ Suggest the **0.6B** speech model on Intel Macs and PCs without NVIDIA.
 ### 8. Google Docs (only if asked)
 
 Follow `docs/GOOGLE_DOCS.md`. The Google steps happen in the user's browser and account: walk
-them through it (window → Google Docs → **Sign in with Google**); you can't do those clicks for them.
-If the window says sign-in *isn't set up*, the maintainer must do the one-time Google Cloud
-setup at the end of `docs/GOOGLE_DOCS.md`.
+them through it; you can't do those clicks for them. Default: **Way 1** (script in the doc → paste the
+**Web app URL** → Connect). The window names the exact fix for every wrong paste or deployment setting.
+Changed `gdocs.py` or `LiveCaptions.gs`? Run `cd app && python3 ../tests/test_gdocs_script.py` (needs node).
 
 ### 9. Finish
 
@@ -142,7 +142,7 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 
 ## Never
 
-- Never commit or print secrets: the Google sign-in token (`~/.livecaptions/google_account.json`) is a password; the OAuth client JSON only goes in the `GOOGLE_OAUTH_CLIENT` GitHub secret.
+- Never commit or print secrets: the Google sign-in token and the doc's Web app URL (both in `~/.livecaptions/google_account.json`) are passwords; the OAuth client JSON only goes in the `GOOGLE_OAUTH_CLIENT` GitHub secret.
 - Never delete `Documents/Live Captions` (the user's transcripts) or `~/.livecaptions/models`
   without asking.
 - Never edit OBS settings while OBS is open.
