@@ -3,17 +3,33 @@
 Live Captions can write the original speech and the translation into Google Docs
 while people speak. Each session gets its **own new doc** in your Google Drive.
 
-## Use it
+## Way 1 (simplest): a script in your doc
 
-1. In the Live Captions window open **Google Docs** → **Sign in with Google** (only the first time).
-   - A browser tab opens. Choose your Google account and press **Continue / Allow**.
-   - If Google says *“Google hasn't verified this app”*: **Advanced → Go to Live Captions**.
-   - The tab says **✓ Signed in**. Close it.
-2. Press **Start writing**. A new doc *“Live Captions · 1 Nov 2026, 10:30”* appears in your
-   Google Drive and the sentences are added at its end. **Open the doc** shows it.
-3. **Time stamps**: untick to leave out the time in front of each line. You can switch it
-   any time; it applies to the next lines.
-4. **Stop writing** pauses. **New session** (in *Saving transcript*) makes the next doc.
+Once per doc, about 2 minutes. No Google Cloud, no test list, no signing in again later.
+
+1. Open the Google Doc you want the captions in.
+2. **Extensions → Apps Script**. Delete everything there. In the Live Captions window
+   (**Google Docs**) press **Copy script**, paste it, press **Save** (disk icon).
+3. **Deploy → New deployment** → gear icon → **Web app**.
+   *Execute as*: **Me** · *Who has access*: **Anyone** → **Deploy**.
+4. **Authorize access** → your account. Google warns *“hasn't verified this app”*: it's your own
+   script, so **Advanced → Go to … (unsafe) → Allow**.
+5. Copy the **Web app URL** (ends in `/exec`) → paste it in the Live Captions window → **Connect**.
+   It says *Connected to “your doc”*.
+
+Each time: **Start writing** adds a dated heading, then the captions at the end of the doc.
+**Stop writing** when done. Untick **Time stamps** to leave out the times.
+
+Keep the Web app URL private: whoever has it can add text to that doc.
+On another computer: paste the same Web app URL there (write from one computer at a time).
+
+## Way 2: Sign in with Google
+
+Under **Or: Sign in with Google** in the window. A new doc for each session; no script.
+Your Gmail must be on the app's test list (ask the maintainer), and Google asks you to sign in
+again every 7 days. Live Captions can see and edit only the docs it creates.
+
+## How it looks
 
 With time stamps:
 
@@ -25,29 +41,27 @@ Without:
 > **Hindi**   आज सत्संग में सेवा और सिमरन की बात होगी।
 > Today the satsang will be about sewa and simran.
 
-What Live Captions can see: Google only lets it **see and edit the docs it created itself**
-(permission *drive.file*). It can't open any of your other files. The sign-in is kept on
-this computer only (`~/.livecaptions/google_account.json`). **Sign out** removes it and also
-cancels the access at Google; your docs stay in your Drive.
-
 If the internet drops for a moment, lines wait and are sent in order when it is back.
-The sessions are also always saved on the computer (Documents → Live Captions).
+Sessions are also always saved on the computer (Documents → Live Captions).
 
 ## Problems
 
-| The window shows… | Fix |
+| The window says… | Fix |
 |---|---|
-| *Google sign-in isn't set up in this version yet* | The installer was built without the Google client (maintainer: see below). |
-| *Error 403: access_denied* in the browser | The Google account isn't on the test-user list (maintainer: add it, see step 4 below), or publish the app. |
-| *Google access ended* | You signed out at Google, changed your password, or 7 days passed while the app is in *Testing*. Press **Sign in with Google** again. |
+| *That's the doc's own link* / *the Apps Script editor link* / *the test URL (/dev)* | Copy the **Web app URL**: in Apps Script **Deploy → Manage deployments** → Web app → URL (ends in `/exec`). |
+| *Google can't find this web app* | The deployment was deleted or the URL is cut off. Copy it again from **Manage deployments**, or make a **New deployment**. |
+| *Google asks to sign in* / *Google refused* | **Manage deployments → ✎**: *Execute as* **Me**, *Who has access* **Anyone** → **Deploy**. Work/school accounts may not allow “Anyone”; use a personal Gmail doc or Way 2. |
+| *The doc has an older Live Captions script* | Paste the new script (**Copy script**) → **Save** → **Manage deployments → ✎ → Version: New version → Deploy**. The URL stays the same. |
+| *Open (or reload) the Google Doc once* | Open the doc in the browser once, then press **Connect** again. |
 | *can't reach Google (offline?)* | Check the internet; lines are kept and sent later. |
+| Way 2: *Error 403: access_denied* | Your Gmail isn't on the test list: ask the maintainer to add it. |
+| Way 2: *Google access ended* | Press **Sign in with Google** again (every 7 days while the app is in Testing). |
 
-Versions before 1.0.9 used an Apps Script pasted into the doc. That's no longer needed:
-you can delete it in the doc (**Extensions → Apps Script**), or just leave it.
+Docs set up with version 1.0.7 or 1.0.8 need the new script once (row *older script* above).
 
 ---
 
-## Maintainer: one-time Google Cloud setup (about 10 minutes)
+## Maintainer: Way 2 setup, once (about 10 minutes)
 
 The app needs one OAuth client ("Desktop app") that every installation uses.
 

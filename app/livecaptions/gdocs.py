@@ -1,4 +1,8 @@
-"""Writes captions into Google Docs, with "Sign in with Google" (no script in the doc).
+"""Writes captions into Google Docs, two ways:
+
+A. "Use a script in my doc": the user pastes data/google-docs/LiveCaptions.gs into a doc,
+   deploys it as a web app and pastes its Web app URL here. Lines go into that doc.
+B. "Sign in with Google" (below): no script; a new doc for each session.
 
 1. Sign in: the app opens Google's sign-in page in the browser. Google sends the
    browser back to http://127.0.0.1:8765/gdocs/oauth with a one-time code, which
@@ -81,10 +85,35 @@ class GoogleError(RuntimeError):
     pass
 
 
+SCRIPT_VERSION = 2   # the "VERSION" in LiveCaptions.gs that this app expects
+
+
+def parse_script_url(text: str) -> str:
+    """The Web app URL from what the user pasted. Raises GoogleError saying what's wrong."""
+    import re
+    t = (text or "").strip().strip("<>\"'")
+    if re.fullmatch(r"AKfy[\w-]{20,}", t):  # just the deployment ID
+        return f"https://script.google.com/macros/s/{t}/exec"
+    m = re.search(r"https://script\.google\.com(/a/macros/[^/\s]+|/macros)/s/([\w-]+)/(exec|dev)", t)
+    if m and m.group(3) == "dev":
+        raise GoogleError("That's the test URL (ends in /dev). Use Deploy → New deployment → Web app, "
+                          "and copy the Web app URL that ends in /exec.")
+    if m:
+        return f"https://script.google.com{m.group(1)}/s/{m.group(2)}/exec"
+    if "script.google.com" in t:
+        raise GoogleError("That's the Apps Script editor link. Copy the Web app URL instead "
+                          "(Deploy → Manage deployments → Web app → URL, ends in /exec).")
+    if "docs.google.com" in t:
+        raise GoogleError("That's the doc's own link. Paste the Web app URL from Apps Script "
+                          "(Deploy → Manage deployments, ends in /exec).")
+    raise GoogleError("Paste the Web app URL from Apps Script (starts with https://script.google.com/, ends in /exec).")
+
+
 class GoogleDocs:
     def __init__(self) -> None:
         self.client = load_client()
         self.refresh_token = ""
+        self.script_url = ""           # way A: the doc's Web app URL
         self.show_time = True
         self.writing = False
         self.doc_id = ""
@@ -93,7 +122,8 @@ class GoogleDocs:
         self.sent = 0
         self._access = ("", 0.0)       # (token, expires at)
         self._pending: dict = {}       # sign-in in progress: state, verifier, redirect
-        self._new_doc = True           # next Start makes a new doc
+        self._new_doc = True           # next Start makes a new doc (script: a new heading)
+        self._doc_link = ""
         self._q: "queue.Queue[dict]" = queue.Queue(maxsize=2000)
         self._retry: list[dict] = []
         self._wake = threading.Event()
@@ -101,6 +131,7 @@ class GoogleDocs:
         try:
             a = json.loads(ACCOUNT.read_text(encoding="utf-8"))
             self.refresh_token = a.get("refresh_token", "")
+            self.script_url = a.get("script_url", "")
             self.show_time = a.get("show_time", True)
         except (OSError, ValueError):
             pass
@@ -111,15 +142,64 @@ class GoogleDocs:
     def _save(self) -> None:
         ACCOUNT.parent.mkdir(parents=True, exist_ok=True)
         tmp = ACCOUNT.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"refresh_token": self.refresh_token, "show_time": self.show_time}),
+        tmp.write_text(json.dumps({"refresh_token": self.refresh_token, "script_url": self.script_url,
+                                   "show_time": self.show_time}),
                        encoding="utf-8")
         try:
-            os.chmod(tmp, 0o600)  # the token only for this user
+            os.chmod(tmp, 0o600)  # the token / Web app URL only for this user
         except OSError:
             pass
         os.replace(tmp, ACCOUNT)
 
-    # ---- sign in ------------------------------------------------------------
+    # ---- way A: script in the doc --------------------------------------------
+    def connect_script(self, text: str) -> str:
+        """Check the pasted Web app URL with the script. -> "" or what to fix."""
+        try:
+            url = parse_script_url(text)
+            r = self._script(url, None)
+        except (GoogleError, ConnectionError) as e:
+            return str(e) if isinstance(e, GoogleError) else "can't reach Google (offline?)"
+        self.script_url, self.refresh_token = url, ""   # one way at a time
+        self.doc_title, self.doc_id, self.error = r.get("doc", ""), "", ""
+        self._doc_link = r.get("url", "")
+        self._new_doc = True
+        self._save()
+        return ""
+
+    def _script(self, url: str, payload: dict | None) -> dict:
+        """One call to the doc's web app; every way it can fail becomes a plain message."""
+        data = json.dumps(payload).encode() if payload is not None else None
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"} if data else {})
+        try:
+            # Apps Script answers with a redirect to the result (urllib follows it as a GET).
+            with urllib.request.urlopen(req, timeout=30, context=self._ctx) as resp:
+                body = resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise GoogleError("Google can't find this web app. Check the URL (Deploy → Manage deployments), "
+                                  "or make a new deployment and paste its URL.") from None
+            if e.code in (401, 403):
+                raise GoogleError("Google refused: in Deploy → Manage deployments → ✎ set Who has access: Anyone.") from None
+            raise GoogleError(f"Google answered with error {e.code}") from None
+        except (urllib.error.URLError, OSError) as e:
+            raise ConnectionError(str(e)) from None
+        try:
+            r = json.loads(body)
+        except ValueError:
+            if "accounts.google.com" in body or "ServiceLogin" in body:
+                raise GoogleError("Google asks to sign in: in Deploy → Manage deployments → ✎ set "
+                                  "Who has access: Anyone (and Execute as: Me).") from None
+            raise GoogleError("The web app didn't answer like the Live Captions script. "
+                              "Paste the script again and make a new deployment.") from None
+        if r.get("v", 0) < SCRIPT_VERSION:
+            raise GoogleError("The doc has an older Live Captions script. Paste the new script (Copy script), "
+                              "Save, then Deploy → Manage deployments → ✎ → Version: New version → Deploy.")
+        if not r.get("ok"):
+            raise GoogleError("The script said: " + str(r.get("error") or "unknown problem"))
+        self.doc_title, self._doc_link = r.get("doc") or self.doc_title, r.get("url") or self._doc_link
+        return r
+
+    # ---- way B: sign in ---------------------------------------------------------
     def sign_in_url(self, redirect: str) -> str:
         """Google's sign-in page for this computer; the browser comes back to `redirect`."""
         if not self.client:
@@ -155,7 +235,7 @@ class GoogleDocs:
             return str(e)
         if not r.get("refresh_token"):
             return "Google gave no lasting access. Press Sign in with Google again."
-        self.refresh_token = r["refresh_token"]
+        self.refresh_token, self.script_url = r["refresh_token"], ""   # one way at a time
         self._access = (r.get("access_token", ""), time.time() + int(r.get("expires_in", 0)) - 60)
         self.error = ""
         self._save()
@@ -163,6 +243,8 @@ class GoogleDocs:
         return ""
 
     def sign_out(self) -> None:
+        """Disconnect, whichever way is used."""
+        self.script_url = ""
         tok, self.refresh_token = self.refresh_token, ""
         self.writing, self.doc_id, self.doc_title, self._access = False, "", "", ("", 0.0)
         self._new_doc, self.error = True, ""
@@ -178,7 +260,9 @@ class GoogleDocs:
 
     # ---- from the app window -------------------------------------------------
     def command(self, writing: bool | None = None, show_time: bool | None = None) -> None:
-        if writing is not None and self.refresh_token:
+        if writing is not None and self.linked():
+            if writing and not self.writing and self.script_url:
+                self._new_doc = True       # each Start adds a dated heading in the doc
             self.writing = writing
         if show_time is not None:
             self.show_time = show_time
@@ -190,18 +274,24 @@ class GoogleDocs:
         self._new_doc = True
         self._wake.set()
 
+    def linked(self) -> bool:
+        return bool(self.refresh_token or self.script_url)
+
     def doc_url(self) -> str:
+        if self.script_url:
+            return self._doc_link
         return f"https://docs.google.com/document/d/{self.doc_id}/edit" if self.doc_id else ""
 
     def status(self) -> dict:
-        return {"configured": bool(self.client), "signed_in": bool(self.refresh_token),
+        return {"configured": bool(self.client), "signed_in": self.linked(),
+                "way": "script" if self.script_url else "google" if self.refresh_token else "",
                 "writing": self.writing, "doc": self.doc_title, "doc_url": self.doc_url(),
                 "error": self.error, "sent": self.sent, "show_time": self.show_time,
                 "waiting": self._q.qsize() + len(self._retry)}
 
     def active(self) -> bool:
         """Lines are being written into a doc (keeps the app running without OBS)."""
-        return bool(self.refresh_token) and self.writing
+        return self.linked() and self.writing
 
     def add(self, stamp: str, lang: str, transcript: str, caption: str) -> None:
         if not self.active():
@@ -306,6 +396,15 @@ class GoogleDocs:
         self._api(f"{DOCS_API}/{self.doc_id}:batchUpdate", {"requests": [
             {"insertText": {"location": {"index": at}, "text": text}}] + styles})
 
+    def _send_script(self, lines: list[dict]) -> None:
+        payload = {"lines": lines, "showTime": self.show_time}
+        if self._new_doc:
+            fmt = "%d %b %Y, %H:%M" if self.show_time else "%d %b %Y"
+            payload["heading"] = "Live captions · " + dt.datetime.now().strftime(fmt).lstrip("0")
+        if lines or self._new_doc:
+            self._script(self.script_url, payload)
+            self._new_doc = False
+
     # ---- background writer -----------------------------------------------------
     def _run(self) -> None:
         backoff = 0.0
@@ -321,10 +420,14 @@ class GoogleDocs:
                 except queue.Empty:
                     break
             try:
-                if self._new_doc or not self.doc_id:
-                    self._create_doc()
+                if self.script_url:
+                    self._send_script(lines)
+                else:
+                    if self._new_doc or not self.doc_id:
+                        self._create_doc()
+                    if lines:
+                        self._append(lines)
                 if lines:
-                    self._append(lines)
                     self.sent += len(lines)
                 self.error, backoff = "", 0.0
                 if not self._q.empty():

@@ -237,12 +237,14 @@ on Windows). Or ask the agent: *“Start Live Captions.”*
 
 Full guide: [GOOGLE_DOCS.md](GOOGLE_DOCS.md).
 
-1. Live Captions window → **Google Docs** → **Sign in with Google** (once per computer)
-   → choose your account → **Allow** (if Google warns *unverified app*: **Advanced → Go to Live Captions**).
-2. **Start writing**: each session goes into its own new doc in your Google Drive (**Open the doc**).
-3. Untick **Time stamps** to leave out the times. **Stop writing** when done.
+1. In the Google Doc: **Extensions → Apps Script** → paste the script (window → **Google Docs → Copy script**) → **Save**.
+2. **Deploy → New deployment → Web app**, *Execute as* **Me**, *Who has access* **Anyone** → **Deploy** →
+   **Authorize** (*unverified app* → **Advanced → Go to … → Allow**).
+3. Copy the **Web app URL** (ends in `/exec`) → paste in the window → **Connect**.
+4. **Start writing** / **Stop writing**. Untick **Time stamps** to leave out the times.
 
-No script in the doc, no links to copy.
+(Or *Sign in with Google* in the same section: no script, a new doc per session, but your Gmail must be
+on the maintainer's test list.)
 
 ---
 
@@ -252,7 +254,7 @@ No script in the doc, no links to copy.
 |---|---|
 | Same version everywhere | download the installers from the same release page (the version is in the file name) |
 | Computers without fast internet | copy the models instead of downloading: copy the folder `~/.livecaptions/models` (Mac) or `%USERPROFILE%\.livecaptions\models` (Windows) from a set-up computer to the same place on the new one, *then* install |
-| Google Docs on several computers | sign in with Google on each; each makes its own docs |
+| Google Docs on several computers | paste the same Web app URL on each (write from one at a time), or sign in with Google on each |
 | Update | install the newer release over the old one (settings and models stay), or in Cursor: *“Update to the newest version from GitHub”* |
 
 ## Uninstall

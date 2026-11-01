@@ -156,12 +156,25 @@
           <button class="btn small" id="docsOff">Sign out</button></div>
       </div>
       <div id="docsSetup">
-        <div class="note" style="margin-top:0">Write the original speech and the translation into Google Docs as people
-          speak: a new doc for each session, in your Google Drive. Sign in once:</div>
-        <div class="btns"><button class="btn primary" id="docsSignIn">Sign in with Google</button></div>
-        <div class="note">Google asks to let Live Captions <i>see and edit only the files it creates</i>.
-          It can't open your other files. If Google says the app isn't verified: <b>Advanced → Go to Live Captions</b>.</div>
-        <div class="note" id="docsErr" role="alert"></div>
+        <div class="note" style="margin-top:0">Write the original speech and the translation into a Google Doc as people speak.</div>
+        <b>Use a script in my doc</b> <span class="note">(no Google Cloud needed; once per doc, about 2 minutes)</span>
+        <ol class="steps">
+          <li>In the Google Doc: <b>Extensions → Apps Script</b>. Delete what's there, paste the script
+            <button class="btn small" id="copyScript">Copy script</button> and press <b>Save</b> (disk icon).</li>
+          <li><b>Deploy → New deployment</b> → gear → <b>Web app</b>. <i>Execute as:</i> <b>Me</b>,
+            <i>Who has access:</i> <b>Anyone</b> → <b>Deploy</b> → <b>Authorize access</b>
+            (Google warns “unverified app”: <b>Advanced → Go to … → Allow</b>).</li>
+          <li>Copy the <b>Web app URL</b> (ends in <code>/exec</code>) and paste it here:</li>
+        </ol>
+        <div class="row" style="gap:6px"><input id="docsUrl" placeholder="https://script.google.com/macros/s/…/exec"
+             aria-label="Web app URL from Apps Script" style="flex:1;min-width:0">
+          <button class="btn small primary" id="docsConnect">Connect</button></div>
+        <div class="note" id="docsErr" role="alert" aria-live="polite"></div>
+        <details style="margin-top:10px"><summary class="note">Or: Sign in with Google (a new doc for each session)</summary>
+          <div class="btns"><button class="btn" id="docsSignIn">Sign in with Google</button></div>
+          <div class="note">Live Captions can see and edit only the docs it creates. Your Gmail must be on the
+            app's test list, and Google asks you to sign in again every 7 days.</div>
+        </details>
       </div>
     </div>
     </div>
@@ -283,15 +296,16 @@
     const g = d.gdocs || {};
     $('docsLinked').hidden = !g.signed_in; $('docsSetup').hidden = !!g.signed_in;
     $('docsSignIn').disabled = !g.configured;
-    if (!g.configured) $('docsErr').textContent = 'Google sign-in isn\u2019t set up in this version yet.';
-    else if (!g.signed_in && g.error) $('docsErr').textContent = g.error;
+    if (!g.signed_in && g.error) $('docsErr').textContent = g.error;
     if (g.signed_in) {
       let s, det;
       if (g.error) { s = '✕ ' + g.error; det = 'Retrying automatically.'; }
       else if (g.writing) { s = '● Writing into “' + (g.doc || 'a new doc') + '”'; det = `${g.sent} lines` + (g.waiting ? ` · ${g.waiting} waiting` : ''); }
+      else if (g.way === 'script') { s = '○ Connected to “' + (g.doc || 'your Google Doc') + '”'; det = 'Start writing adds a dated heading, then the captions, at the end of the doc.'; }
       else { s = '○ Signed in'; det = g.doc ? 'Last doc: “' + g.doc + '”. Start writing continues there; New session makes a new doc.' : 'Start writing makes a new doc in your Google Drive.'; }
       $('docsState').textContent = s; $('docsDetail').textContent = det;
-      $('sumDocs').textContent = g.error ? 'problem' : g.writing ? 'writing' : 'signed in';
+      $('sumDocs').textContent = g.error ? 'problem' : g.writing ? 'writing' : 'connected';
+      $('docsOff').textContent = g.way === 'script' ? 'Disconnect' : 'Sign out';
       const w = $('docsWrite');
       w.textContent = g.writing ? 'Stop writing' : 'Start writing';
       w.classList.toggle('primary', !g.writing);
@@ -338,7 +352,27 @@
     const d = await api('/gdocs?signin=1');
     $('docsErr').textContent = d.gdocs_error || 'Finish signing in in the browser tab that opened, then come back here.';
   };
-  $('docsOff').onclick = () => { if (confirm('Sign out of Google? Your docs stay in Google Drive.')) act('/gdocs?signout=1'); };
+  $('docsOff').onclick = () => { if (confirm('Disconnect Google Docs? What was written stays in the doc.')) act('/gdocs?signout=1'); };
+  $('copyScript').onclick = async () => {
+    const b = $('copyScript'), txt = await (await fetch('/gdocs/script')).text();
+    try { await navigator.clipboard.writeText(txt); }
+    catch (e) { const t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+    b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = 'Copy script', 2500);
+  };
+  const connect = async () => {
+    const v = $('docsUrl').value.trim(), b = $('docsConnect');
+    if (!v) { $('docsErr').textContent = 'Paste the Web app URL first.'; $('docsUrl').focus(); return; }
+    b.disabled = true; b.textContent = 'Checking…'; $('docsErr').textContent = '';
+    try {
+      const d = await api('/gdocs?script=' + encodeURIComponent(v));
+      $('docsErr').textContent = d.gdocs_error || '';
+      if (!d.gdocs_error) $('docsUrl').value = '';
+      render(d);
+    } catch (e) { $('docsErr').textContent = 'Live Captions isn\u2019t answering. Is it still running?'; }
+    b.disabled = false; b.textContent = 'Connect';
+  };
+  $('docsConnect').onclick = connect;
+  $('docsUrl').onkeydown = (e) => { if (e.key === 'Enter') connect(); };
 
   let stopped = false;
   async function poll() {
