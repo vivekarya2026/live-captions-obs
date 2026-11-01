@@ -92,5 +92,6 @@ dated heading.
 | *That isn't a Live Captions link* | Copy the link with the sidebar's **Copy connection link** button (it starts with `https://script.google.com/` and ends with `?k=…`). |
 | *the script is not deployed as a web app for "Anyone"* | Step 4 again: Deploy → Manage deployments → edit → *Who has access: Anyone*. |
 | *wrong key* | The link was renewed. Copy it again from the sidebar. |
+| *Google says this link doesn't exist* | The link points to a web app that isn't there (Google gave the sidebar a wrong address, or the deployment was archived). In Apps Script: **Deploy → Manage deployments** → copy the **Web app URL**. No deployment listed? Make one (step 4). Then in the doc sidebar: **App says “link not found”?** → paste it → **Save** → **Copy connection link** → in the app **Disconnect** and paste the new link. |
 | *can't reach Google (offline?)* | Check the internet; lines are kept and sent later. |
 | Sidebar says *One more step* | Paste the *Web app URL* from **Deploy → Manage deployments** (ends in `/exec`) into the sidebar and press Save. |

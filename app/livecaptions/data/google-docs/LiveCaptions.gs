@@ -47,10 +47,11 @@ function key_() {
 }
 
 function webAppUrl_() {
-  var url = '';
-  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) {}
-  if (!/\/exec$/.test(url)) url = PROPS.getProperty('webAppUrl') || '';
-  return url;
+  // The URL pasted from Deploy -> Manage deployments wins: inside a doc,
+  // ScriptApp.getService().getUrl() can give a URL that Google answers with "Page not found".
+  var url = PROPS.getProperty('webAppUrl') || '';
+  if (!url) { try { url = ScriptApp.getService().getUrl() || ''; } catch (e) {} }
+  return /\/exec$/.test(url) ? url : '';
 }
 
 function getStatus() {
@@ -212,10 +213,12 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 '  <div class="small">Copy this link and paste it in the Live Captions app → <i>Google Docs</i> → <i>Connect</i>.</div>' +
 '  <input id="link" readonly onclick="this.select()">' +
 '  <button id="copy" style="margin-top:6px">Copy connection link</button>' +
+'  <div class="small"><a href="#" id="fixLink">App says “link not found”?</a></div>' +
 '</div>' +
 '<div id="needUrl" hidden>' +
-'  <b>One more step</b>' +
-'  <div class="small">Paste the <i>Web app URL</i> from <i>Deploy → Manage deployments</i> (ends in /exec):</div>' +
+'  <b id="needTitle">One more step</b>' +
+'  <div class="small">In Apps Script open <i>Deploy → Manage deployments</i>, copy the <i>Web app URL</i> (ends in /exec) and paste it here. ' +
+'No deployment there? Make one first: <i>Deploy → New deployment → Web app</i>, access <i>Anyone</i>.</div>' +
 '  <input id="url" placeholder="https://script.google.com/macros/s/…/exec">' +
 '  <button id="saveUrl" style="margin-top:6px">Save</button>' +
 '</div>' +
@@ -224,7 +227,7 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 'If you shared the link by mistake, make a new one (the old link stops working):</div>' +
 '<button id="newKey">Make a new link</button></details>' +
 '<script>' +
-'var S=null,busy=false;' +
+'var S=null,busy=false,fixing=false;' +
 'function $(i){return document.getElementById(i)}' +
 'function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]})}' +
 'function render(s){S=s;busy=false;' +
@@ -234,7 +237,7 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 ' else if(s.writing){st.className="status ok";st.innerHTML="<b>● Writing into this document</b>"+s.count+" lines so far";}' +
 ' else{st.className="status";st.innerHTML="<b>App connected</b>Press Start to write the captions here.";}' +
 ' t.disabled=!s.link;t.textContent=s.writing?"Stop writing":"Start writing";t.className=s.writing?"stop":"primary";' +
-' $("needUrl").hidden=!!s.link;$("setup").hidden=!s.link;$("showTime").checked=s.showTime;' +
+' $("needUrl").hidden=!!s.link&&!fixing;$("setup").hidden=!s.link;$("showTime").checked=s.showTime;' +
 ' if($("link").value!==s.link)$("link").value=s.link;' +
 ' var r=s.recent||[];$("recentBox").hidden=!r.length;' +
 ' $("recent").innerHTML=r.slice().reverse().map(function(l){return "<div class=line><small>"+(s.showTime&&l.t?esc(l.t)+" · ":"")+esc(l.src||"")+"</small>"+esc(l.out||"")+"</div>"}).join("");' +
@@ -246,7 +249,9 @@ var SIDEBAR_HTML = '<!doctype html><html><head><base target="_top"><meta charset
 '$("copy").onclick=function(){var i=$("link");i.select();try{navigator.clipboard.writeText(i.value)}catch(e){document.execCommand("copy")}' +
 ' $("copy").textContent="Copied ✓";setTimeout(function(){$("copy").textContent="Copy connection link"},2000);};' +
 '$("showTime").onchange=function(){google.script.run.withSuccessHandler(render).withFailureHandler(fail).setShowTime($("showTime").checked);};' +
-'$("saveUrl").onclick=function(){google.script.run.withSuccessHandler(render).withFailureHandler(fail).setWebAppUrl($("url").value);};' +
+'$("fixLink").onclick=function(e){e.preventDefault();fixing=true;$("needTitle").textContent="Fix the link";$("needUrl").hidden=false;$("url").focus();};' +
+'$("saveUrl").onclick=function(){google.script.run.withSuccessHandler(function(s){fixing=false;render(s);' +
+' $("copy").textContent="Saved ✓ now copy the link again";setTimeout(function(){$("copy").textContent="Copy connection link"},4000);}).withFailureHandler(fail).setWebAppUrl($("url").value);};' +
 '$("newKey").onclick=function(){if(confirm("Make a new link? The app must be connected again with the new link."))' +
 ' google.script.run.withSuccessHandler(render).withFailureHandler(fail).newKey();};' +
 'poll();setInterval(poll,2500);' +

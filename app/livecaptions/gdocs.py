@@ -49,6 +49,21 @@ def parse_link(link: str) -> tuple[str, str] | None:
     return f"https://{u.netloc}{u.path}", key
 
 
+def _explain(e: Exception) -> str:
+    """What went wrong, in words that say what to do."""
+    import urllib.error
+    if isinstance(e, RuntimeError):
+        return str(e)
+    if isinstance(e, urllib.error.HTTPError):
+        if e.code == 404:
+            return ("Google says this link doesn't exist. In Apps Script: Deploy → Manage deployments, "
+                    "copy the Web app URL; in the doc sidebar: “link not found?” → paste it → copy the link again")
+        if e.code in (401, 403):
+            return "Google refused: set the web app's access to “Anyone” (Deploy → Manage deployments → ✎)"
+        return f"Google answered with error {e.code}"
+    return "can't reach Google (offline?)"
+
+
 class GoogleDocs:
     def __init__(self) -> None:
         self.url = ""
@@ -166,6 +181,6 @@ class GoogleDocs:
             except Exception as e:
                 self._retry = lines[-500:]  # sent first next time, in the same order
                 self._cmd = {**cmd, **self._cmd}
-                self.error = str(e) if isinstance(e, RuntimeError) else "can't reach Google (offline?)"
+                self.error = _explain(e)
                 log.warning("Google Docs: %s", e)
                 backoff = min(60.0, (backoff or 2.0) * 2)
