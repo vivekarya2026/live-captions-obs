@@ -39,6 +39,7 @@ import time
 from pathlib import Path
 
 from . import models, obs_bridge, paths
+from .meaning import STYLES
 from .speech import NOISE_LEVELS, SPEECH_MODELS, Speech, input_devices, local_mic, save_local_mic
 
 HERE = paths.PACKAGE
@@ -91,6 +92,7 @@ MODES = {
               "folder": "English to Hindi (Devanagari)"},
 }
 MODE_FILE = DATA / "caption_mode.txt"
+STYLE_FILE = DATA / "caption_style.txt"  # word (default), natural or simple: see meaning.py
 CONTROL_PORT = int(os.environ.get("LIVECAPTIONS_PORT", "8765"))  # the OBS dock opens http://127.0.0.1:8765/dock
 LOCALVOCAL_INPUTS = ["Mic/Aux"]
 LOCALVOCAL_FILTER = "LocalVocal Transcription"
@@ -732,6 +734,34 @@ class CaptionPipeline:
         self.lenient = False  # set while processing Qwen3 speech
         self.last: dict = {}  # details of the last processed line (for session logs)
         self.recorder = SessionRecorder()
+        # Caption style (meaning.py): rewrites English by meaning; None = word for word
+        self.style = read_style()
+        self.rewriter = None
+        self.restyle_now = True   # False while newer speech waits: skip the rewrite to keep up
+        self.style_note = ""      # shown in the window, e.g. "using word for word (slow computer)"
+
+    def _restyle(self, english: str) -> str:
+        """English in the chosen caption style; word for word when off, late or unsafe."""
+        if self.style == "word" or self.rewriter is None or not self.restyle_now:
+            return english
+        from . import meaning
+        terms = []
+        if self.vocab.english_re:  # names and vocabulary terms must survive the rewrite
+            for m in self.vocab.english_re.finditer(english):
+                if not _mostly_english(self.vocab.canonical.get(self.vocab._term_key_for_match(m), "")):
+                    terms.append(m.group(0))
+        out = self.rewriter.rewrite(english, self.style, "", terms)
+        if out and self.vocab.english_re and any(  # a vocabulary term that wasn't said: invented
+                m.group(0).lower() not in english.lower() for m in self.vocab.english_re.finditer(out)):
+            log.info("Style %s: rewrite added a term that wasn't said (%r), word for word shown", self.style, out)
+            out = None
+        if out is None and len(meaning.words(english)) >= meaning.MIN_WORDS:
+            slow = self.rewriter.last_seconds >= meaning.BUDGET_SECONDS
+            self.style_note = "using word for word (slow computer)" if slow else self.style_note
+            return english
+        if out:
+            self.style_note = ""
+        return out or english
 
     def fix_hindi_spelling(self, text: str) -> str:
         """Unknown words the speech model misspelt -> the common spelling with
@@ -767,12 +797,20 @@ class CaptionPipeline:
                 out = out.replace('"', "")
             out = restore_terms(out, self.vocab.last_protected)  # "Avatar" -> "Avtar"
         out = re.sub(r"(\w) ['’](s|t|m|re|ve|ll|d)\b", r"\1'\2", out)  # "Let 's" -> "Let's"
-        return self.vocab.apply_english(out.replace("।", ".").replace("॥", "."))
+        return self._english_out(out.replace("।", ".").replace("॥", "."))
+
+    def _english_out(self, english: str) -> str:
+        """English caption: in the caption style, with vocabulary explanations."""
+        styled = self._restyle(english)
+        if styled != english:
+            self._word = "word for word: " + self.vocab.apply_english(english)  # kept in bilingual.txt
+        return self.vocab.apply_english(styled)
 
     def process(self, raw: str, source: str) -> str | None:
         """Returns the caption to show, or None to keep the previous caption.
         Details (language, clean transcript) are left in self.last."""
         self.last = {}
+        self._word = ""  # the word-for-word caption, when a caption style changed it
         text = " ".join(raw.split()).strip(" -–—")
         # Sound tags Whisper adds, e.g. *music*, [Music], (applause), ♪
         text = re.sub(r"\*[^*]{1,30}\*|\[[^\]]{1,30}\]|\([^)]{0,30}(music|applause|laugh|noise|silence|"
@@ -821,9 +859,12 @@ class CaptionPipeline:
                 out = self._hindi_to_english(dev, "hi")
         elif lang == "en" and self.mode == "hi-en":
             # Captions should be English and this already is: show it (with vocabulary).
-            out = self.vocab.apply_english(text)
+            out = self._english_out(text)
         elif lang == "en":
-            src_text = self.vocab.protect_in_english_source(text)
+            styled = self._restyle(text)  # the AI only rewrites English; NLLB then translates
+            if styled != text:
+                self._word = "rewritten English: " + styled
+            src_text = self.vocab.protect_in_english_source(styled)
             hindi = self.translator.translate(src_text, ENG, HIN) if self.translator else src_text
             hindi = restore_terms(hindi, self.vocab.last_protected)  # keep the sheet's Hindi spelling
             out = self._hindi_out(hindi)
@@ -838,7 +879,7 @@ class CaptionPipeline:
             out = text  # e.g. Punjabi OCR: show as-is
 
         out = self.vocab.remove_abusive(out)
-        self.last = {"lang": lang, "transcript": text, "caption": out}
+        self.last = {"lang": lang, "transcript": text, "caption": out, "word": self._word}
         return out or None
 
 
@@ -905,7 +946,7 @@ class SessionRecorder:
         s, ms = divmod(ms, 1000)
         return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
-    def add(self, mode: str, source: str, lang: str, transcript: str, caption: str) -> None:
+    def add(self, mode: str, source: str, lang: str, transcript: str, caption: str, word: str = "") -> None:
         t = time.time()
         if self.dir is None or mode != self.mode or t - self.last_time > self.IDLE_NEW_SESSION:
             self._open(mode)
@@ -920,7 +961,8 @@ class SessionRecorder:
         with open(d / "translation.txt", "a", encoding="utf-8") as f:
             f.write(f"[{stamp}] {caption}\n")
         with open(d / "bilingual.txt", "a", encoding="utf-8") as f:
-            f.write(f"[{stamp}] ({lang_name}, {source}) {transcript}\n           → {caption}\n\n")
+            f.write(f"[{stamp}] ({lang_name}, {source}) {transcript}\n           → {caption}\n"
+                    + (f"           ({word})\n" if word else "") + "\n")
         with open(d / "session.csv", "a", encoding="utf-8-sig", newline="") as f:
             csv.writer(f).writerow([stamp, source, lang_name, transcript, caption])
         start = (now - self.start).total_seconds()
@@ -936,6 +978,13 @@ def read_mode() -> str:
     except FileNotFoundError:
         return "auto"
 
+
+def read_style() -> str:
+    try:
+        s = STYLE_FILE.read_text().strip()
+        return s if s in STYLES else "word"
+    except FileNotFoundError:
+        return "word"
 
 NOISE_FILE = DATA / "noise_level.txt"
 CAPTIONS_ON_FILE = DATA / "captions_on.txt"
@@ -970,6 +1019,7 @@ class App:
         self.status = ""
         self._sync_lock = threading.Lock()
         self._sync_again = False
+        self._rewriter_loading = False
 
     def configure_speech(self) -> None:
         lang_code = MODES[self.pipeline.mode]["whisper"]
@@ -1011,6 +1061,51 @@ class App:
         obs_bridge.write_atomic(MODE_FILE, mode)
         self.pipeline.mode = mode
         self.sync()
+
+    def set_style(self, style: str) -> None:
+        """Caption style (applies from the next sentence)."""
+        obs_bridge.write_atomic(STYLE_FILE, style)
+        self.pipeline.style, self.pipeline.style_note = style, ""
+        log.info("Caption style: %s", style)
+        self.load_rewriter()
+
+    def load_rewriter(self) -> None:
+        """Natural/Simple need the style model: download it on first use, then load it once."""
+        p = self.pipeline
+        if p.style == "word" or p.rewriter is not None or self._rewriter_loading:
+            return
+        if not models.model_ready("meaning"):
+            self.setup.start(want="meaning")  # no-op while another download runs; retried every 2 s
+            return
+        self._rewriter_loading = True
+
+        def work():
+            from .meaning import Rewriter
+            try:
+                p.rewriter = Rewriter(models.model_dir("meaning"))
+            except Exception as e:
+                log.exception("Could not load the caption style model")
+                p.style_note = f"could not load the style model ({e.__class__.__name__}): word for word"
+            finally:
+                self._rewriter_loading = False
+        threading.Thread(target=work, daemon=True).start()
+
+    def style_status(self) -> str:
+        p = self.pipeline
+        if p.style == "word":
+            return ""
+        if p.rewriter is not None:
+            return p.style_note or "ready"
+        if self._rewriter_loading:
+            return "loading the style model… (word for word until then)"
+        if models.model_ready("meaning"):
+            return p.style_note or "starting…"
+        st = self.setup.status()
+        if st["stage"] == "meaning" and st["running"]:
+            return f"downloading the style model {st['percent']}%… (word for word until then)"
+        if st["error"] and not st["running"]:
+            return "style model download stopped: press Try again above (word for word until then)"
+        return "waiting to download the style model… (word for word until then)"
 
     def mic(self, payload: dict, reloads: bool) -> None:
         if obs_bridge.state() is None:  # no OBS: Live Captions listens to the mic itself
@@ -1060,6 +1155,9 @@ class App:
             "mode": p.mode, "status": self.status,
             "modes": {k: v["label"] for k, v in MODES.items()},
             "hints": {k: v["hint"] for k, v in MODES.items()},
+            "style": p.style, "style_status": self.style_status(),
+            "styles": {k: v["label"] for k, v in STYLES.items()},
+            "style_hints": {k: v["hint"] for k, v in STYLES.items()},
             "mic": {"device_id": mic.get("device_id", ""), "devices": mic.get("devices", []),
                     "volume": mic.get("volume", 1.0), "muted": mic.get("muted", False),
                     "noise": read_noise_level()},
@@ -1142,8 +1240,13 @@ def start_control_server(app: App) -> bool:
                 if q.get("model") in SPEECH_MODELS:
                     app.speech.choose_model(q["model"], on_started=app.sync)
                 return self._json(app.state())
+            if url.path == "/style":
+                if q.get("set") in STYLES and q["set"] != p.style:
+                    app.set_style(q["set"])
+                return self._json(app.state())
             if url.path == "/setup/retry":
-                app.setup.start()
+                want = "meaning" if p.style != "word" and not models.model_ready("meaning") else None
+                app.setup.start(want=want)
                 return self._json(app.state())
             if url.path in ("/mode", "/state"):
                 app.last_client = time.time()
@@ -1225,6 +1328,7 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
         pipeline.translator = Translator()
 
     setup.when_ready("nllb", nllb_ready)
+    setup.when_ready("meaning", app.load_rewriter)
     setup.when_ready("runtime", lambda: app.speech.start_qwen_if_ready(app.sync))
     for key in SPEECH_MODELS:
         setup.when_ready(key, lambda: app.speech.start_qwen_if_ready(app.sync))
@@ -1268,7 +1372,7 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
             log_transcript(source, raw, caption)
             info = pipeline.last
             pipeline.recorder.add(pipeline.mode, source, info.get("lang", ""),
-                                  info.get("transcript", raw), caption)
+                                  info.get("transcript", raw), caption, info.get("word", ""))
             if app.gdocs is not None:
                 app.gdocs.add(dt.datetime.now().strftime("%H:%M:%S"),
                               LANG_NAMES.get(info.get("lang", ""), info.get("lang", "")),
@@ -1313,6 +1417,9 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
             pipeline.vocab.reload_if_changed()  # edits to the vocabulary sheet apply live
             app.configure_speech()
             app.speech.follow_obs_microphone()
+            # Natural/Simple chosen: fetch/load the style model once nothing else is downloading
+            if pipeline.style != "word" and pipeline.rewriter is None and not setup.running and not setup.error:
+                app.load_rewriter()
         on = captions_on()
         # Qwen3 captions
         pipeline.lenient = True
@@ -1339,9 +1446,13 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
                 if is_fragment(text):
                     fragment, fragment_time = text, time.time()
             try:
+                # Only finished sentences are restyled (partials change every moment), and
+                # not when newer speech already waits: captions keep up.
+                pipeline.restyle_now = final and app.speech.texts.empty()
                 show(text, "speech", final and not fragment)
             except Exception:
                 log.exception("Failed to process caption: %s", text)
+            pipeline.restyle_now = True
         pipeline.lenient = False
         # Whisper (LocalVocal) captions, until Qwen3 is ready
         for name, path in INPUTS.items():

@@ -126,6 +126,11 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 - **Vocabulary** words: edit `app/livecaptions/data/vocabulary/Vocabulary_for_Live_Translations.xlsx`
   (or `hindi_terms.csv`), not the code. Changes apply live.
 - After any change run `--test` and `tests/test_vocabulary.py`. Both must pass.
+- **Caption styles** (Natural / Simple, `meaning.py`): after changing it run `../.venv/bin/python ../tests/test_meaning.py`
+  (must end `ALL STYLE CHECKS PASS`, no download needed). Real-model smoke test: choose **Natural** in the
+  window (or `curl -s "http://127.0.0.1:8765/style?set=natural"`), wait until the note says *Ready*, say
+  a long sentence; the caption should be reworded, and `translator.log` shows `Style …` lines when a
+  sentence fell back to word for word. Speed on this computer: `tests/bench_meaning.py ~/.livecaptions/models/meaning`.
 - Keep it working on **all three**: Mac Apple Silicon, Mac Intel (PyTorch 2.2.2, NumPy < 2, CPU only)
   and Windows. Use `paths.py` for every folder; never hard-code a path.
 - Never commit models, `.venv`, `build/`, `dist/` (see `.gitignore`).

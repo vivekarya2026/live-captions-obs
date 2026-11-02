@@ -13,7 +13,8 @@ flowchart LR
     OBSMIC[OBS mic + LocalVocal<br/>Whisper] --> FIX
     ASR --> FIX[Fix spelling +<br/>vocabulary terms]
     FIX --> NLLB[Translate<br/>NLLB-200]
-    NLLB --> OUT{Send to}
+    NLLB --> STYLE[Caption style<br/>Natural / Simple<br/>Qwen2.5 0.5B, optional]
+    STYLE --> OUT{Send to}
     OUT --> OVL[OBS caption overlay]
     OUT --> WIN[App window<br/>127.0.0.1:8765]
     OUT --> DOC[Google Doc]
@@ -22,6 +23,14 @@ flowchart LR
 
 Everything in the middle runs on the user's computer. Only the Google Docs part uses the internet,
 and it sends text only, never audio.
+
+**Caption styles.** *Word for word* is NLLB's translation as it is. *Natural* and *Simple* add one
+step: a small text model rewrites the **English** by meaning (`meaning.py`). It never translates. For a
+Hindi speaker it rewrites NLLB's English; for an English speaker with Hindi captions it rewrites the
+English first, then NLLB translates that. Each rewrite has 1.5 s (`LIVECAPTIONS_STYLE_SECONDS`) and must
+pass checks: no "Here is…", not too long, every vocabulary term, name and number kept, and few new
+words. If it fails, that sentence shows word for word. Half sentences and lines of 3 words or fewer
+are never rewritten, and neither is a sentence when newer speech is already waiting.
 
 ## 2. The parts (code files)
 
@@ -35,7 +44,8 @@ flowchart TD
     translator --> gdocs[gdocs.py<br/>Google Docs sender]
     translator --> obs_setup[obs_setup.py<br/>adds the script to OBS]
     translator --> models
-    translator --> obs_bridge
+    translator --> meaning[meaning.py<br/>caption styles]
+    meaning --> models    translator --> obs_bridge
     speech[speech.py<br/>picks the speech engine] --> qwen[qwen_engine.py<br/>mic + Qwen3-ASR]
     speech --> obs_bridge[obs_bridge.py<br/>talks to OBS / LocalVocal]
     speech --> models
@@ -50,10 +60,11 @@ flowchart TD
 
 | File | Job | Change it when… |
 |---|---|---|
-| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/mic`, `/captions`, `/gdocs`, `/quit`…) | the cleanup, translation, or window behaviour changes |
+| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/mic`, `/captions`, `/gdocs`, `/quit`…) | the cleanup, translation, or window behaviour changes |
+| `meaning.py` | Caption styles *Natural* / *Simple*: prompts, the rewrite with a time limit, and the safety checks that fall back to word for word | style wording, checks, the style model |
 | `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic) | you add a speech engine |
 | `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real | mic or speech-model behaviour |
-| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B model downloads only when chosen | model versions, download logic |
+| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B model downloads only when chosen, and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
 | `hinglish.py` | Hindi ↔ Hinglish (Roman letters) spelling | Hinglish spelling |
 | `gdocs.py` | Queues lines and sends them to the Google Docs script, retrying when offline | Google Docs sending |
 | `obs_bridge.py`, `obs_setup.py`, `install_localvocal.py` | OBS: config, the script, the LocalVocal plugin | OBS integration |
@@ -70,7 +81,7 @@ Outside the app:
 | `installer/macos/` | Builds the `.pkg`. `ARCH=arm64` or `ARCH=x86_64` |
 | `installer/windows/` | Builds `Setup.exe` (Inno Setup) |
 | `.github/workflows/build.yml` | On a `v*` tag: builds both Mac packages and the Windows installer, then publishes a release |
-| `tests/` | `test_vocabulary.py` (every term, every mode), `test_qwen_live.py` (speech) |
+| `tests/` | `test_vocabulary.py` (every term, every mode), `test_meaning.py` (caption-style fallbacks, no model needed), `bench_meaning.py` (style model speed test), `test_qwen_live.py` (speech), `test_gdocs_script.py` |
 | `docs/` | User guides (install, setup, Google Docs) and this map |
 
 ## 3. Where things are kept on a computer
@@ -92,6 +103,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 |---|---|---|
 | Qwen3-ASR for speech | Best Hindi + English accuracy in our tests; 0.6B is fast, 1.7B more accurate | a better offline Hindi model appears |
 | NLLB-200 (CTranslate2, int8) for translation | Offline, good Hindi ↔ English, small | licence needs change (NLLB is non-commercial) |
+| Caption styles: Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites English only, greedy, 1.5 s limit | Speed test on 30 real lines (M4 Pro): 0.5B median 0.5 s Natural / 0.4 s Simple, never over 1.5 s; 1.5B was nicer but median 1.4 s with 12/30 Natural over 1.5 s. Qwen3-1.7B wasn't tested (download failed; it's bigger than 1.5B, so slower). The small model sometimes changes the meaning, so strict checks fall back to word for word | a faster computer target, or the checks reject too often: try 1.5B (`tests/bench_meaning.py`) |
 | PyTorch is downloaded on first start, not bundled | Keeps installers under 70 MB; picks the GPU build on NVIDIA PCs | never, unless offline installs are needed |
 | Intel Macs pinned to PyTorch 2.2.2 + NumPy 1.x, CPU only | 2.2.2 is the last Intel Mac build | if Intel support is dropped |
 | Intel `.pkg` built on Apple Silicon via Rosetta | GitHub is retiring its Intel Mac machines | if the Rosetta build breaks |
@@ -113,6 +125,9 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Offline pack installs with no Hugging Face | Fresh home folder, zips in Downloads, Hugging Face blocked: both models ready in 3 s, translation + Hindi transcription correct | Oct 31 2026 | high (Mac) |
 | GitHub fallback when Hugging Face fails | Hugging Face blocked: NLLB installed from the real GitHub pack in 14 min, progress moving, no leftovers; a zip with a `../` path is rejected | Oct 31 2026 | high (Mac) |
 | Vocabulary terms survive translation | `tests/test_vocabulary.py` | each change | high |
+| Caption styles fall back safely (late, too long, "Here is", dropped/added term, changed number, new ideas) | `tests/test_meaning.py` with a fake model | Nov 1 2026 | high |
+| Caption styles: speed + quality | `tests/bench_meaning.py`, 30 real lines, M4 Pro: Natural median 0.51 s, Simple 0.38 s; checks rejected 3 / 8 of 30 (shown word for word) | Nov 1 2026 | high (M4 Pro), **untested on Intel Mac / Windows** |
+| Style model downloads on first use | Fresh data folder: `meaning` pack from GitHub in ~35 s, loads in 0.3 s; window shows downloading → ready | Nov 1 2026 | high (Mac) |
 
 When you test something new, add a row. Results get stale: re-test after big updates
 (new PyTorch, new models, new OS version).

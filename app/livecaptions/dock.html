@@ -37,6 +37,7 @@
   details[open] summary .sum { display:none; }
   .body { padding:0 12px 10px; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .grid.three { grid-template-columns:1fr 1fr 1fr; }
   .opt { all:unset; cursor:pointer; padding:8px 9px; border-radius:6px; background:#2e3038; border:1px solid var(--line); }
   .opt span { display:block; font-size:12.5px; } .opt small { color:var(--muted); font-size:10.5px; }
   .opt[aria-checked="true"] { background:var(--accent-bg); border-color:var(--accent); }
@@ -107,6 +108,9 @@
     <summary>Language <span class="sum" id="sumLang"></span></summary>
     <div class="body busy-area" id="langArea">
       <div class="grid" id="modes" role="radiogroup" aria-label="Caption language"></div>
+      <div class="note" id="styleLbl" style="margin:10px 0 5px;color:#c9ccd3">Caption style</div>
+      <div class="grid three" id="styles" role="radiogroup" aria-labelledby="styleLbl"></div>
+      <div class="note" id="styleNote" aria-live="polite"></div>
     </div>
   </details>
 
@@ -238,7 +242,22 @@
     }
     for (const b of modes.children) b.setAttribute('aria-checked', b.dataset.mode === d.mode);
     $('langArea').setAttribute('aria-busy', busy);
-    $('sumLang').textContent = d.modes[d.mode];
+    $('sumLang').textContent = d.modes[d.mode] + (d.style && d.style !== 'word' ? ' · ' + d.styles[d.style] : '');
+
+    // Caption style (Word for word / Natural / Simple)
+    const styles = $('styles');
+    if (d.styles && !styles.children.length) {
+      for (const [k, label] of Object.entries(d.styles)) {
+        const b = document.createElement('button');
+        b.className = 'opt'; b.setAttribute('role', 'radio'); b.dataset.style = k;
+        b.innerHTML = `<span>${label}</span><small>${d.style_hints[k] || ''}</small>`;
+        b.onclick = () => { if (k !== S.style) act('/style?set=' + k); };
+        styles.appendChild(b);
+      }
+    }
+    for (const b of styles.children) b.setAttribute('aria-checked', b.dataset.style === d.style);
+    $('styleNote').textContent = d.style === 'word' ? ''
+      : (d.style_status === 'ready' ? '✓ Ready. Changes apply from the next sentence.' : d.style_status || '');
 
     // Microphone
     const m = d.mic, sel = $('micDev');
@@ -283,10 +302,13 @@
     $('setupFill').style.width = (st.percent || 0) + '%';
     $('setupBar').setAttribute('aria-valuenow', st.percent || 0);
     const gb = x => (x / 1e9).toFixed(1);
-    $('setupTitle').textContent = st.error ? 'Download stopped' : `First-time setup: ${st.percent || 0}%`;
+    const extra = st.stage === 'meaning' || st.stage === 'qwen-1.7b';  // optional model, chosen in this window
+    $('setupTitle').textContent = st.error ? 'Download stopped'
+      : extra ? `Downloading an extra model: ${st.percent || 0}%` : `First-time setup: ${st.percent || 0}%`;
     $('setupMsg').textContent = st.error ? st.message
       : `${st.message || 'Waiting…'} ${st.total ? `(${gb(st.done)} of ${gb(st.total)} GB)` : ''} — `
-        + (d.obs ? 'captions keep working with Whisper meanwhile.' : 'captions start when this is done (only the first time).');
+        + (extra ? 'captions keep working meanwhile.'
+           : d.obs ? 'captions keep working with Whisper meanwhile.' : 'captions start when this is done (only the first time).');
     $('setupRetryRow').hidden = !(st.error || (!st.running && need));
 
     // Volume / mute: OBS's Mic/Aux, or (without OBS) the app's own mic level

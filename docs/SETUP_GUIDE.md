@@ -222,6 +222,14 @@ on Windows). Or ask the agent: *“Start Live Captions.”*
 
 1. Wait until the download in the window says it is ready (only the first time).
 2. **Language**: choose who speaks which language, e.g. **Hindi → English**.
+   **Caption style** (below it):
+   - **Word for word**: every word, as said (the default).
+   - **Natural**: the meaning, said the way a person would. Filler and repeats are dropped, facts kept.
+   - **Simple**: the main point in plain words (at most about 20 words).
+
+   Natural and Simple use a small AI model on your computer (about 0.5 GB, downloaded the first time you
+   pick one; nothing goes online). If a sentence can't be rewritten quickly or safely, that sentence shows
+   word for word, so captions never wait. `bilingual.txt` keeps the word-for-word line too.
 3. **Microphone**: pick the mic and check the level moves when you speak.
 4. **Speech model**: **0.6B** on Intel Macs and PCs without NVIDIA; **1.7B** is more accurate on fast computers.
 5. Switch **Captions ON**. Speak a sentence; the original and translation appear.
@@ -278,6 +286,7 @@ on the maintainer's test list.)
 | Download stays at 0% / says *No data for … s* | Something blocks huggingface.co: turn off the VPN, try another network (e.g. phone hotspot), or allow Live Captions in the antivirus/firewall. Then **Try again**. From version 1.0.5 the app switches to GitHub by itself when huggingface.co fails |
 | No internet / everything blocked | Use the **offline pack**: download both `LiveCaptions-model-….zip` files from the [model pack page](https://github.com/vivekarya2026/live-captions-obs/releases/tag/models-v1) on another computer, copy them (USB / Google Drive) into **Downloads**, **Desktop** or **Documents**, then open Live Captions (1.0.5+). The speech engine still needs internet once (pypi.org) |
 | Captions come late (Intel Mac / PC without NVIDIA) | choose the **0.6B** speech model; close other heavy apps |
+| *Natural* / *Simple* says *using word for word (slow computer)* | the computer can't rewrite in time; captions are still shown word for word. Choose **Simple** (fastest) or **Word for word** |
 | `python3.11: command not found` / `py -3.11` not found | install Python 3.11 (B1) and open a new terminal |
 | Intel Mac: *A module compiled with NumPy 1.x cannot run in NumPy 2* | `.venv/bin/pip install "numpy<2" --only-binary=:all:` |
 | OBS has no Live Captions panel | quit OBS, start Live Captions once, then open OBS |

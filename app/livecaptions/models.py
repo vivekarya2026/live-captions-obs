@@ -5,6 +5,7 @@ Python packages Qwen3-ASR needs) in the background, with progress for the dock.
   nllb       Meta NLLB-200 1.3B int8 (CTranslate2) translation   1.3 GB
   qwen-0.6b  Qwen3-ASR 0.6B speech recognition (default)         1.8 GB
   qwen-1.7b  Qwen3-ASR 1.7B speech recognition (dock option)     4.4 GB, only when chosen
+  meaning    Qwen2.5 Instruct int8 (CTranslate2), caption styles  only when Natural/Simple is chosen
 
 Models can also come from an offline pack (LiveCaptions-model-*.zip, see PACKS).
 
@@ -35,6 +36,8 @@ from . import paths
 
 log = logging.getLogger("setup")
 
+MEANING_SIZE = 0.51e9  # Qwen2.5-0.5B-Instruct int8: fastest in tests/bench_meaning.py (~0.4 s a sentence)
+
 MODELS = {
     "nllb": {"repo": "OpenNMT/nllb-200-distilled-1.3B-ct2-int8", "size": 1.37e9,
              "label": "Translation (NLLB-200)",
@@ -42,14 +45,17 @@ MODELS = {
              "extra": [("facebook/nllb-200-distilled-1.3B", "sentencepiece.bpe.model")]},
     "qwen-0.6b": {"repo": "Qwen/Qwen3-ASR-0.6B", "size": 1.88e9, "label": "Speech (Qwen3-ASR 0.6B)"},
     "qwen-1.7b": {"repo": "Qwen/Qwen3-ASR-1.7B", "size": 4.7e9, "label": "Speech (Qwen3-ASR 1.7B)"},
+    # Caption styles Natural/Simple (meaning.py). Our own CTranslate2 int8 conversion, so it
+    # comes from this project's GitHub release only (no Hugging Face repo).
+    "meaning": {"repo": None, "size": MEANING_SIZE, "label": "Caption style model (Qwen2.5 0.5B)"},
 }
-ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b"]  # translation first: Whisper captions need it too
-OPTIONAL = {"qwen-1.7b"}  # downloaded only when chosen in the window
+ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b", "meaning"]  # translation first: Whisper captions need it too
+OPTIONAL = {"qwen-1.7b", "meaning"}  # downloaded only when chosen in the window
 # Offline pack: the same model files as zips, on this project's GitHub release "models-v1".
 # Used when huggingface.co can't be reached, or found on disk (Downloads/Desktop/Documents).
-PACKS = {"nllb", "qwen-0.6b"}
+PACKS = {"nllb", "qwen-0.6b", "meaning"}
 PACK_URL = "https://github.com/vivekarya2026/live-captions-obs/releases/download/models-v1/LiveCaptions-model-{key}.zip"
-PACK_CHECK = {"nllb": "model.bin", "qwen-0.6b": "model.safetensors"}
+PACK_CHECK = {"nllb": "model.bin", "qwen-0.6b": "model.safetensors", "meaning": "model.bin"}
 
 
 def _fetch(url: str, dest: Path, tries: int = 8) -> None:
@@ -274,6 +280,8 @@ class Setup:
             _unpack(pack, target, key)
         else:
             try:
+                if not info["repo"]:  # only on GitHub
+                    raise FileNotFoundError(f"{key} has no Hugging Face repo")
                 snapshot_download(info["repo"], local_dir=str(target))
                 for repo, fname in info.get("extra", []):
                     hf_hub_download(repo, fname, local_dir=str(target))
@@ -281,8 +289,9 @@ class Setup:
                 if key not in PACKS:
                     raise
                 # huggingface.co blocked or failing: same files from this project's GitHub release
-                log.warning("Hugging Face download of %s failed, using GitHub", key, exc_info=True)
-                self.message = f"huggingface.co didn't work, downloading {info['label']} from GitHub instead…"
+                if info["repo"]:
+                    log.warning("Hugging Face download of %s failed, using GitHub", key, exc_info=True)
+                    self.message = f"huggingface.co didn't work, downloading {info['label']} from GitHub instead…"
                 zip_path = target / ".pack.zip"
                 try:
                     _fetch(PACK_URL.format(key=key), zip_path)
