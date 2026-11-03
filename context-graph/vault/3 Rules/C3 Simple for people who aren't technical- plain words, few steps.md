@@ -11,4 +11,6 @@ type: "constraint"
 - [[Google Docs]] (must respect)
 - [[Model download]] (must respect)
 - [[Installers]] (must respect)
+- [[Desktop app]] (must respect)
+- [[Custom words]] (must respect)
 - [[Guides]] (must respect)

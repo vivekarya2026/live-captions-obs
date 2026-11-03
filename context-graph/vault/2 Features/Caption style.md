@@ -22,6 +22,8 @@ does: "Word for word / Natural / Simple (Qwen2.5 0.5B rewrites English)"
 - [[tests-bench_meaning.py]] (checks)
 - [[tests-test_meaning.py]] (checks)
 - [[D03 Caption styles- Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites Engl]] (about)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
+- [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)
 - [[E11 Caption styles fall back safely (late, too long, -Here is-, dropped-ad]] (is evidence for)
 - [[E12 Caption styles- speed + quality]] (is evidence for)
 - [[E13 Style model downloads on first use]] (is evidence for)

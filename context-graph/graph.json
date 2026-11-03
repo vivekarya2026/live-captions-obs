@@ -27,6 +27,11 @@
    "name": "Never stall the captions: fall back instead of waiting"
   },
   {
+   "id": "constraint:C6",
+   "type": "constraint",
+   "name": "Keep Handy's MIT notice; no other Handy name, logo or link in the app"
+  },
+  {
    "id": "feature:overlay",
    "type": "feature",
    "name": "Caption overlay",
@@ -127,6 +132,24 @@
    "type": "feature",
    "name": "Installers",
    "does": "Mac .dmg/.pkg (arm64, x86_64), Windows Setup.exe"
+  },
+  {
+   "id": "feature:desktop-app",
+   "type": "feature",
+   "name": "Desktop app",
+   "does": "Handy fork (Tauri v2): menu bar / tray app with Live Captions, Vocabulary, Dictation, History, Models pages; starts the engine"
+  },
+  {
+   "id": "feature:dictation",
+   "type": "feature",
+   "name": "Dictation",
+   "does": "Hold a shortcut, speak, the translated text is typed into any app (POST /dictate)"
+  },
+  {
+   "id": "feature:custom-words",
+   "type": "feature",
+   "name": "Custom words",
+   "does": "Words added in the app (custom_terms.csv), win over the sheet"
   },
   {
    "id": "feature:docs",
@@ -303,6 +326,14 @@
    "note": "v1.1.0. On the computer, 1.5 s limit, word-for-word fallback."
   },
   {
+   "id": "req:R22",
+   "type": "requirement",
+   "name": "Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding",
+   "date": "2026-11-01",
+   "status": "partial",
+   "note": "Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet."
+  },
+  {
    "id": "file:app/livecaptions/__main__.py",
    "type": "file",
    "name": "app/livecaptions/__main__.py",
@@ -369,7 +400,7 @@
    "id": "file:app/livecaptions/qwen_engine.py",
    "type": "file",
    "name": "app/livecaptions/qwen_engine.py",
-   "lines": 265,
+   "lines": 296,
    "summary": "Qwen3-ASR speech recognition: listens to the microphone itself (so it works"
   },
   {
@@ -383,7 +414,7 @@
    "id": "file:app/livecaptions/translator.py",
    "type": "file",
    "name": "app/livecaptions/translator.py",
-   "lines": 1576,
+   "lines": 1708,
    "summary": "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English."
   },
   {
@@ -423,6 +454,36 @@
    "name": ".github/workflows/build.yml"
   },
   {
+   "id": "file:desktop/src-tauri/src/live_captions.rs",
+   "type": "file",
+   "name": "desktop/src-tauri/src/live_captions.rs"
+  },
+  {
+   "id": "file:desktop/src/components/settings/live/LiveCaptionsSettings.tsx",
+   "type": "file",
+   "name": "desktop/src/components/settings/live/LiveCaptionsSettings.tsx"
+  },
+  {
+   "id": "file:desktop/src/hooks/useEngine.ts",
+   "type": "file",
+   "name": "desktop/src/hooks/useEngine.ts"
+  },
+  {
+   "id": "file:desktop/src-tauri/tauri.conf.json",
+   "type": "file",
+   "name": "desktop/src-tauri/tauri.conf.json"
+  },
+  {
+   "id": "file:desktop/src-tauri/src/actions.rs",
+   "type": "file",
+   "name": "desktop/src-tauri/src/actions.rs"
+  },
+  {
+   "id": "file:desktop/src/components/settings/live/VocabularySettings.tsx",
+   "type": "file",
+   "name": "desktop/src/components/settings/live/VocabularySettings.tsx"
+  },
+  {
    "id": "file:docs/SETUP_GUIDE.md",
    "type": "file",
    "name": "docs/SETUP_GUIDE.md"
@@ -451,6 +512,11 @@
    "id": "route:/captions",
    "type": "route",
    "name": "/captions"
+  },
+  {
+   "id": "route:/dictate",
+   "type": "route",
+   "name": "/dictate"
   },
   {
    "id": "route:/gdocs",
@@ -511,6 +577,16 @@
    "id": "route:/style",
    "type": "route",
    "name": "/style"
+  },
+  {
+   "id": "route:/terms",
+   "type": "route",
+   "name": "/terms"
+  },
+  {
+   "id": "route:/terms/open",
+   "type": "route",
+   "name": "/terms/open"
   },
   {
    "id": "test:tests/bench_meaning.py",
@@ -600,6 +676,27 @@
   },
   {
    "id": "decision:D09",
+   "type": "decision",
+   "name": "Desktop app = fork of Handy (Tauri v2), engine stays in Python",
+   "why": "The user asked for Handy's UI and features (dictation, history, overlay, tray, onboarding, themes) with our pipeline. Rewriting Qwen3 + NLLB + vocabulary + styles in Rust would have duplicated tested code; a local helper process keeps one pipeline for OBS, the window and dictation",
+   "revisit_when": "if the Python install becomes the main support problem"
+  },
+  {
+   "id": "decision:D10",
+   "type": "decision",
+   "name": "Dictation goes through /dictate, not Handy's Whisper",
+   "why": "Same vocabulary, translation and caption style as the captions; Hindi → English while dictating. Handy's models kept as *Built-in* fallback",
+   "revisit_when": "—"
+  },
+  {
+   "id": "decision:D11",
+   "type": "decision",
+   "name": "Handy branding removed; MIT credit kept in About, THIRD_PARTY.md and desktop/LICENSE",
+   "why": "User asked to remove the branding; the MIT licence requires the notice",
+   "revisit_when": "never drop the notice"
+  },
+  {
+   "id": "decision:D12",
    "type": "decision",
    "name": "Not signed by Apple/Microsoft",
    "why": "Signing costs money every year; the guide explains the one-time prompt",
@@ -708,6 +805,54 @@
    "how": "Fresh data folder: `meaning` pack from GitHub in ~35 s, loads in 0.3 s; window shows downloading → ready",
    "date": "Nov 1 2026",
    "confidence": "high (Mac)"
+  },
+  {
+   "id": "evidence:E14",
+   "type": "evidence",
+   "name": "Dictation endpoint",
+   "how": "Engine started with `--desktop PID`; macOS voice clip *\"आज हम सब मिलकर सत्संग में सेवा करेंगे\"* → `POST /dictate` → *\"…sewa (selfless service) in satsang…\"* in 1.6 s (1.7B, M-series)",
+   "date": "Nov 3 2026",
+   "confidence": "high (Mac)"
+  },
+  {
+   "id": "evidence:E15",
+   "type": "evidence",
+   "name": "Custom words apply to dictation",
+   "how": "`POST /terms` *Burari = Samagam ground in Delhi* → next dictation *\"Burari (Samagam ground in Delhi) ground\"*; removed again",
+   "date": "Nov 3 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E16",
+   "type": "evidence",
+   "name": "Web pages can't post to the engine",
+   "how": "`POST /dictate` with `Origin` + `Sec-Fetch-Site: cross-site` → 403",
+   "date": "Nov 3 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E17",
+   "type": "evidence",
+   "name": "Engine quits with the desktop app",
+   "how": "Killed the `--desktop` parent PID → log *Desktop app closed: stopping*, no process left",
+   "date": "Nov 3 2026",
+   "confidence": "high (Mac), **Windows untested**"
+  },
+  {
+   "id": "evidence:E18",
+   "type": "evidence",
+   "name": "Desktop app code",
+   "how": "`cargo test --lib` 338 passed; `tsc`, `eslint`, keyboard test pass",
+   "date": "Nov 3 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E19",
+   "type": "evidence",
+   "name": "Desktop app with a real mic + shortcut, typing into another app",
+   "how": "**not yet tested by a person** (needs mic + Accessibility permission)",
+   "date": "—",
+   "confidence": "untested"
   },
   {
    "id": "release:v1.0.0",
@@ -875,6 +1020,48 @@
   },
   {
    "source": "feature:installers",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "must_respect",
+   "target": "constraint:C6",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:custom-words",
    "type": "must_respect",
    "target": "constraint:C3",
    "confidence": 1.0
@@ -1096,6 +1283,30 @@
    "confidence": 1.0
   },
   {
+   "source": "req:R22",
+   "type": "answered_by",
+   "target": "feature:desktop-app",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R22",
+   "type": "answered_by",
+   "target": "feature:dictation",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R22",
+   "type": "answered_by",
+   "target": "feature:custom-words",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R22",
+   "type": "answered_by",
+   "target": "feature:vocabulary",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:overlay",
    "type": "implemented_in",
    "target": "file:app/livecaptions/data/overlay.html",
@@ -1306,6 +1517,72 @@
    "confidence": 1.0
   },
   {
+   "source": "feature:desktop-app",
+   "type": "implemented_in",
+   "target": "file:desktop/src-tauri/src/live_captions.rs",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/settings/live/LiveCaptionsSettings.tsx",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "implemented_in",
+   "target": "file:desktop/src/hooks/useEngine.ts",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "implemented_in",
+   "target": "file:desktop/src-tauri/tauri.conf.json",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:desktop-app",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "implemented_in",
+   "target": "file:desktop/src-tauri/src/actions.rs",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "implemented_in",
+   "target": "file:desktop/src-tauri/src/live_captions.rs",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dictation",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:custom-words",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/settings/live/VocabularySettings.tsx",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:custom-words",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:docs",
    "type": "implemented_in",
    "target": "file:docs/SETUP_GUIDE.md",
@@ -1386,19 +1663,13 @@
   {
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
-   "target": "file:app/livecaptions/qwen_engine.py",
+   "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
    "target": "file:app/livecaptions/models.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/speech.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
@@ -1408,21 +1679,9 @@
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/translator.py",
+   "source": "file:app/livecaptions/speech.py",
    "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/models.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
+   "target": "file:app/livecaptions/qwen_engine.py",
    "confidence": 1.0
   },
   {
@@ -1434,13 +1693,7 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/obs_setup.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/hinglish.py",
    "confidence": 1.0
   },
   {
@@ -1453,6 +1706,30 @@
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
    "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -1471,6 +1748,12 @@
    "source": "route:/captions",
    "type": "part_of",
    "target": "feature:mic-control",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/dictate",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
@@ -1609,6 +1892,18 @@
    "source": "route:/style",
    "type": "part_of",
    "target": "feature:caption-styles",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/terms",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/terms/open",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
@@ -1792,13 +2087,121 @@
    "confidence": 0.6
   },
   {
+   "source": "decision:D08",
+   "type": "about",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
    "source": "decision:D09",
+   "type": "about",
+   "target": "feature:overlay",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:dock",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:obs-setup",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:whisper-fallback",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D10",
+   "type": "about",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D11",
+   "type": "about",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D12",
    "type": "about",
    "target": "feature:mic-control",
    "confidence": 0.6
   },
   {
-   "source": "decision:D09",
+   "source": "decision:D12",
    "type": "about",
    "target": "feature:docs",
    "confidence": 0.6
@@ -2005,6 +2408,66 @@
    "source": "evidence:E13",
    "type": "proves",
    "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E14",
+   "type": "proves",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E14",
+   "type": "proves",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E15",
+   "type": "proves",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E15",
+   "type": "proves",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E15",
+   "type": "proves",
+   "target": "feature:custom-words",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E16",
+   "type": "proves",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E17",
+   "type": "proves",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E18",
+   "type": "proves",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E19",
+   "type": "proves",
+   "target": "feature:mic-control",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E19",
+   "type": "proves",
+   "target": "feature:desktop-app",
    "confidence": 0.6
   },
   {

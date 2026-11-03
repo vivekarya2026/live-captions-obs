@@ -241,6 +241,27 @@ on Windows). Or ask the agent: *“Start Live Captions.”*
 **With OBS:** just open OBS. The captions overlay is added to your scene; the panel is under
 **Docks → Live Captions** (OBS 30+: **View → Docks**).
 
+### Desktop app (optional): menu bar app + dictation
+
+The desktop app (`desktop/` folder) puts everything above in one window that lives in the menu bar
+(Mac) or system tray (Windows), and adds **dictation**: type by speaking in any app.
+
+1. Build it once (Cursor can do this for you, see `AGENTS.md` step 7b):
+   `cd desktop && bun install && bun run tauri build --bundles app`. Open **Live Captions.app**.
+2. The first-run screens ask for **Microphone** and (Mac) **Accessibility**. Allow both: Accessibility
+   is what lets it type into other apps.
+3. **Live Captions** page: the same controls as the window (Captions ON, language, style, speech model,
+   mic, Google Docs, OBS link).
+4. **Dictation**: click in any text box, **hold ⌥ Space** (Mac) / **Ctrl+Space** (Windows), speak, let go.
+   The text is typed in, translated by the language you chose (Hindi → English types English) and in
+   the caption style you chose. Tap the shortcut once instead to start, again to stop.
+5. **Vocabulary** page: add names and terms that must always come out right (with an English meaning
+   and a Hindi spelling if you want). They apply to captions and dictation straight away.
+6. **History**: every dictation with its recording, to copy or play again.
+7. Closing the window keeps it in the menu bar; **Quit** from the menu bar icon stops it and the engine.
+
+The desktop app is built on [Handy](https://github.com/cjpais/Handy) (MIT licence).
+
 ### Google Docs (optional)
 
 Full guide: [GOOGLE_DOCS.md](GOOGLE_DOCS.md).
@@ -274,6 +295,9 @@ on the maintainer's test list.)
 | Cursor / source | run `python -m livecaptions.obs_setup --remove` from `app` (if you used OBS), then delete the project folder and `~/.livecaptions` |
 
 ## Problems
+
+- **Desktop app says the engine can't be found**: it looks for the project's `.venv`. Set `LIVECAPTIONS_HOME` to the project folder, or install Live Captions first.
+- **Dictation records but types nothing (Mac)**: allow Live Captions in System Settings → Privacy & Security → **Accessibility**, then restart it.
 
 | Problem | Fix |
 |---|---|

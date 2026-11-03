@@ -1,5 +1,5 @@
 ---
-id: decision:D09
+id: decision:D12
 type: "decision"
 why: "Signing costs money every year; the guide explains the one-time prompt"
 revisit_when: "if many users get stuck on the prompt"

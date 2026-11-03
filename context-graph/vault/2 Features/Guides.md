@@ -17,5 +17,5 @@ does: "Setup guide, agent instructions, architecture map"
 ## Linked from
 - [[R16 Step-by-step setup guide for other computers with Cursor, and instruct]] (answered by)
 - [[R17 A short message the team can follow]] (answered by)
-- [[D09 Not signed by Apple-Microsoft]] (about)
+- [[D12 Not signed by Apple-Microsoft]] (about)
 - [[E04 Setup from source works]] (is evidence for)

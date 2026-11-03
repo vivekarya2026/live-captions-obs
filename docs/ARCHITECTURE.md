@@ -19,6 +19,8 @@ flowchart LR
     OUT --> WIN[App window<br/>127.0.0.1:8765]
     OUT --> DOC[Google Doc]
     OUT --> FILES[Session files<br/>Documents/Live Captions]
+    PTT[Desktop app<br/>hold shortcut] -->|recording| ASR
+    STYLE -->|dictation| TYPE[Typed into<br/>any app]
 ```
 
 Everything in the middle runs on the user's computer. Only the Google Docs part uses the internet,
@@ -31,6 +33,26 @@ English first, then NLLB translates that. Each rewrite has 1.5 s (`LIVECAPTIONS_
 pass checks: no "Here is…", not too long, every vocabulary term, name and number kept, and few new
 words. If it fails, that sentence shows word for word. Half sentences and lines of 3 words or fewer
 are never rewritten, and neither is a sentence when newer speech is already waiting.
+
+**Desktop app.** `desktop/` is a fork of [Handy](https://github.com/cjpais/Handy) (MIT): a Tauri v2
+app (Rust + React) that lives in the menu bar / system tray. It starts the Python engine above as a
+helper process (`python -m livecaptions --desktop <app PID>`) and talks to it on 127.0.0.1:8765. Its pages:
+*Live Captions* (on/off, language, style, speech model, mic, preview, session, Google Docs, OBS),
+*Vocabulary* (custom words), *Dictation* (Handy's push-to-talk, shortcuts, overlay), *History*,
+*Models* and *About*. **Dictation**: hold the shortcut, speak, let go. Handy records the clip and
+sends it to `POST /dictate`. The engine runs it through the same Qwen3 → vocabulary → NLLB → style steps
+as live captions and returns the text, which Handy pastes into the app in front. Handy's own Whisper /
+Parakeet models still work if *Speech engine* is set to *Built-in* (Advanced).
+
+```mermaid
+flowchart LR
+    subgraph Desktop["Live Captions.app (Tauri)"]
+      UI[React pages] -->|lc_request / lc_save_terms| RS[live_captions.rs]
+      KEY[Shortcut + recorder<br/>actions.rs] -->|PCM| RS
+    end
+    RS -->|starts, stops with app| ENG[Python engine<br/>--desktop PID]
+    RS -->|GET /state /mode /style /mic …<br/>POST /dictate /terms| ENG
+```
 
 ## 2. The parts (code files)
 
@@ -60,10 +82,10 @@ flowchart TD
 
 | File | Job | Change it when… |
 |---|---|---|
-| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/mic`, `/captions`, `/gdocs`, `/quit`…) | the cleanup, translation, or window behaviour changes |
+| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/mic`, `/captions`, `/gdocs`, `/terms`, `/quit`…) and, for the desktop app, `POST /dictate` (one recording → text) and `POST /terms` (custom words → `custom_terms.csv`). POSTs from a web page (`Origin` / `Sec-Fetch-Site` set) are refused. `--desktop PID` = started by the desktop app: no window, quit when that PID ends | the cleanup, translation, or window behaviour changes |
 | `meaning.py` | Caption styles *Natural* / *Simple*: prompts, the rewrite with a time limit, and the safety checks that fall back to word for word | style wording, checks, the style model |
 | `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic) | you add a speech engine |
-| `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real | mic or speech-model behaviour |
+| `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real. `transcribe_clip()` does one dictation recording; a lock keeps it from running at the same time as live captions | mic or speech-model behaviour |
 | `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B model downloads only when chosen, and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
 | `hinglish.py` | Hindi ↔ Hinglish (Roman letters) spelling | Hinglish spelling |
 | `gdocs.py` | Queues lines and sends them to the Google Docs script, retrying when offline | Google Docs sending |
@@ -71,12 +93,18 @@ flowchart TD
 | `paths.py` | Every folder the app uses | never, unless a folder moves |
 | `dock.html`, `data/overlay.html` | The window/dock page, and the on-stream caption overlay | how they look |
 | `data/vocabulary/` | The vocabulary sheet, Hindi terms, blocked words, Hinglish lexicon | **the vocabulary** (Excel sheet; changes apply live) |
+| `~/.livecaptions/custom_terms.csv` | Words added on the desktop app's Vocabulary page (term, English meaning, Hindi spelling). They win over the sheet | through the app, not by hand |
 | `data/google-docs/oauth_client.json` | Google sign-in client (added by CI from a secret, not in git) | Sign in with Google |
 
 Outside the app:
 
 | Folder | Job |
 |---|---|
+| `desktop/` | The desktop app (Handy fork, Tauri v2). Build: `cd desktop && bun install && bun run tauri build` (needs Rust, Bun, CMake). Dev: `bun run tauri dev` |
+| `desktop/src-tauri/src/live_captions.rs` | Finds Python (`LIVECAPTIONS_HOME`, the app's Resources, this source checkout's `.venv`, or an installed Live Captions), starts/stops the engine, and the `lc_request`, `lc_save_terms`, `lc_links` commands; `dictate()` for push-to-talk |
+| `desktop/src-tauri/src/actions.rs`, `settings.rs` | Handy's recorder → our engine when `speech_engine = live_captions` (default); `built_in` uses Handy's models. Updater is off unless `LIVECAPTIONS_ENABLE_UPDATER` is set |
+| `desktop/src/components/settings/live/` | The *Live Captions* and *Vocabulary* pages; `desktop/src/hooks/useEngine.ts` reads `/state` |
+| `desktop/src/i18n/locales/` | UI text in 26 languages (also builds the tray menu text) |
 | `obs/live_captions.lua` | The OBS script. It starts the app with OBS and adds the overlay. It looks for Python next to itself (installed) or in `.venv` (source) |
 | `installer/macos/` | Builds the `.pkg`. `ARCH=arm64` or `ARCH=x86_64` |
 | `installer/windows/` | Builds `Setup.exe` (Inno Setup) |
@@ -91,7 +119,8 @@ Outside the app:
 |---|---|---|
 | Models (~8 GB) | `~/.livecaptions/models/` | they download again |
 | PyTorch + speech packages | `~/.livecaptions/pylib/` | they install again on next start |
-| Settings, log, PID | `~/.livecaptions/` (`translator.log`) | settings go back to default |
+| Settings, log, PID, custom words | `~/.livecaptions/` (`translator.log`, `custom_terms.csv`) | settings go back to default; custom words are gone |
+| Desktop app settings, dictation history + recordings | Mac: `~/Library/Application Support/org.livecaptions.desktop/` · Windows: `%APPDATA%\org.livecaptions.desktop` | history is gone |
 | Saved sessions | `Documents/Live Captions/` | your transcripts are gone (keep a copy) |
 | Installed app | Mac: `/Applications/Live Captions.app` · Windows: `%LOCALAPPDATA%\Programs\Live Captions` | reinstall |
 
@@ -110,6 +139,9 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Intel `.pkg` built on Apple Silicon via Rosetta | GitHub is retiring its Intel Mac machines | if the Rosetta build breaks |
 | The window is a local web page | Works the same on Mac, Windows and inside OBS; no UI toolkit to install | never |
 | Google Docs two ways: **Way 1** (default) a script in the doc, pasted Web app URL; **Way 2** Sign in with Google (OAuth desktop + PKCE, scope drive.file) and the Docs API | Way 1 needs no Google Cloud project and no test list, so anyone can do it; the window names the fix for every wrong paste or deployment setting (the old sidebar link broke with "page not found"). Way 2 makes a new doc per session but the Gmail must be on the test list | if many users outside the test list want Way 2: publish the app |
+| Desktop app = fork of Handy (Tauri v2), engine stays in Python | The user asked for Handy's UI and features (dictation, history, overlay, tray, onboarding, themes) with our pipeline. Rewriting Qwen3 + NLLB + vocabulary + styles in Rust would have duplicated tested code; a local helper process keeps one pipeline for OBS, the window and dictation | if the Python install becomes the main support problem |
+| Dictation goes through `/dictate`, not Handy's Whisper | Same vocabulary, translation and caption style as the captions; Hindi → English while dictating. Handy's models kept as *Built-in* fallback | — |
+| Handy branding removed; MIT credit kept in About, `THIRD_PARTY.md` and `desktop/LICENSE` | User asked to remove the branding; the MIT licence requires the notice | never drop the notice |
 | Not signed by Apple/Microsoft | Signing costs money every year; the guide explains the one-time prompt | if many users get stuck on the prompt |
 
 ## 5. What has been tested (and what hasn't)
@@ -129,6 +161,13 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Caption styles fall back safely (late, too long, "Here is", dropped/added term, changed number, new ideas) | `tests/test_meaning.py` with a fake model | Nov 1 2026 | high |
 | Caption styles: speed + quality | `tests/bench_meaning.py`, 30 real lines, M4 Pro: Natural median 0.51 s, Simple 0.38 s; checks rejected 3 / 8 of 30 (shown word for word) | Nov 1 2026 | high (M4 Pro), **untested on Intel Mac / Windows** |
 | Style model downloads on first use | Fresh data folder: `meaning` pack from GitHub in ~35 s, loads in 0.3 s; window shows downloading → ready | Nov 1 2026 | high (Mac) |
+
+| Dictation endpoint | Engine started with `--desktop PID`; macOS voice clip *"आज हम सब मिलकर सत्संग में सेवा करेंगे"* → `POST /dictate` → *"…sewa (selfless service) in satsang…"* in 1.6 s (1.7B, M-series) | Nov 3 2026 | high (Mac) |
+| Custom words apply to dictation | `POST /terms` *Burari = Samagam ground in Delhi* → next dictation *"Burari (Samagam ground in Delhi) ground"*; removed again | Nov 3 2026 | high |
+| Web pages can't post to the engine | `POST /dictate` with `Origin` + `Sec-Fetch-Site: cross-site` → 403 | Nov 3 2026 | high |
+| Engine quits with the desktop app | Killed the `--desktop` parent PID → log *Desktop app closed: stopping*, no process left | Nov 3 2026 | high (Mac), **Windows untested** |
+| Desktop app code | `cargo test --lib` 338 passed; `tsc`, `eslint`, keyboard test pass | Nov 3 2026 | high |
+| Desktop app with a real mic + shortcut, typing into another app | **not yet tested by a person** (needs mic + Accessibility permission) | — | untested |
 
 When you test something new, add a row. Results get stale: re-test after big updates
 (new PyTorch, new models, new OS version).

@@ -16,6 +16,8 @@ does: "NLLB-200 1.3B int8, Hindi <-> English"
 - [[R04 Only English to Hindi and Hindi to English, polite, no abusive words,]] (answered by)
 - [[R07 Lower latency, faster captions, switch language both ways]] (answered by)
 - [[D02 NLLB-200 (CTranslate2, int8) for translation]] (about)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
+- [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)
 - [[E02 Intel .pkg works]] (is evidence for)
 - [[E06 First-time download works from zero]] (is evidence for)
 - [[E08 Offline pack installs with no Hugging Face]] (is evidence for)

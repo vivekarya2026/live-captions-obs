@@ -14,3 +14,4 @@ does: "Text on the stream"
 
 ## Linked from
 - [[R01 Live captions for live streaming in OBS]] (answered by)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)

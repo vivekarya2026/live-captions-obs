@@ -46,6 +46,7 @@ HERE = paths.PACKAGE
 VOCAB_DIR = paths.VOCAB_DIR
 VOCAB_XLSX = VOCAB_DIR / "Vocabulary_for_Live_Translations.xlsx"
 HINDI_TERMS_CSV = VOCAB_DIR / "hindi_terms.csv"
+CUSTOM_TERMS_CSV = paths.DATA / "custom_terms.csv"  # Custom Words page of the desktop app
 BLOCKED_WORDS = VOCAB_DIR / "blocked_words.txt"
 
 DATA = paths.DATA
@@ -183,13 +184,38 @@ def _edit_distance(a: str, b: str) -> int:
 # --------------------------------------------------------------------------
 # Vocabulary
 # --------------------------------------------------------------------------
+CUSTOM_TERMS_FIELDS = ("term", "english", "hindi")
+
+
+def read_custom_terms() -> list[dict]:
+    """Words added in the desktop app's Custom Words page: term (as it should appear
+    in English / Hinglish captions), its English meaning (optional), and its Hindi
+    spelling (optional)."""
+    if not CUSTOM_TERMS_CSV.exists():
+        return []
+    with open(CUSTOM_TERMS_CSV, encoding="utf-8") as f:
+        rows = [{k: " ".join((r.get(k) or "").split()) for k in CUSTOM_TERMS_FIELDS} for r in csv.DictReader(f)]
+    return [r for r in rows if r["term"]]
+
+
+def write_custom_terms(rows: list[dict]) -> None:
+    CUSTOM_TERMS_CSV.parent.mkdir(parents=True, exist_ok=True)
+    tmp = CUSTOM_TERMS_CSV.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=CUSTOM_TERMS_FIELDS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in CUSTOM_TERMS_FIELDS})
+    os.replace(tmp, CUSTOM_TERMS_CSV)
+
+
 class Vocabulary:
     def __init__(self) -> None:
         self.mtimes: tuple = ()
         self.load()
 
     def _files(self):
-        return [VOCAB_XLSX, HINDI_TERMS_CSV, BLOCKED_WORDS]
+        return [VOCAB_XLSX, HINDI_TERMS_CSV, BLOCKED_WORDS, CUSTOM_TERMS_CSV]
 
     def reload_if_changed(self) -> None:
         m = tuple(p.stat().st_mtime if p.exists() else 0 for p in self._files())
@@ -206,7 +232,8 @@ class Vocabulary:
         self.mentions: dict[str, int] = {}       # term key -> how common (orders the ASR context)
         self.last_protected: list[str] = []      # terms protected in the last translation
         self._load_hindi_terms_csv()             # hand-made spellings (full forms, variants)
-        self._load_vocab()                       # the sheet: always wins
+        self._load_vocab()                       # the sheet
+        self._load_custom()                      # words added in the desktop app: win over the sheet
         self._finish()
         self._load_blocked()
         log.info("Loaded %d vocabulary terms, %d Hindi spellings, %d blocked words",
@@ -297,6 +324,12 @@ class Vocabulary:
                 continue
             self._add_roman(original, self._display(original, english, sub))
         wb.close()
+
+    def _load_custom(self) -> None:
+        for row in read_custom_terms():
+            key = self._add_roman(row["term"], self._display(row["term"], row["english"], ""))
+            if key and row["hindi"]:
+                self._add_hindi(row["hindi"], key)
 
     def _finish(self) -> None:
         # Full canonical forms ("Dhan Nirankar Ji" for "dnj") are matched too, so a
@@ -1020,6 +1053,31 @@ class App:
         self._sync_lock = threading.Lock()
         self._sync_again = False
         self._rewriter_loading = False
+        self.pipeline_lock = threading.Lock()  # live captions and dictation share the pipeline
+
+    def dictate(self, audio: "object") -> dict:
+        """Push-to-talk from the desktop app: one recording (16 kHz mono float32)
+        -> Qwen3 speech -> vocabulary -> translation -> caption style.
+        Uses the current language (caption mode); not saved to the session or Google Doc."""
+        q = self.speech.qwen
+        if q is None or q.model is None:
+            return {"ok": False, "error": "speech model not ready: " + (self.speech.status or self.setup.status().get("message", "downloading"))}
+        t0 = time.time()
+        raw = q.transcribe_clip(audio)
+        caption, info = "", {}
+        if raw:
+            with self.pipeline_lock:
+                p = self.pipeline
+                before = (p.lenient, p.restyle_now)
+                p.lenient, p.restyle_now = True, True
+                try:
+                    caption = p.process(raw, "speech") or ""
+                    info = dict(p.last)
+                finally:
+                    p.lenient, p.restyle_now = before
+        log.info("(dictation %.2fs) %s  ->  %s", time.time() - t0, raw, caption)
+        return {"ok": True, "transcript": raw, "text": caption, "lang": info.get("lang", ""),
+                "word": info.get("word", ""), "mode": self.pipeline.mode, "seconds": round(time.time() - t0, 2)}
 
     def configure_speech(self) -> None:
         lang_code = MODES[self.pipeline.mode]["whisper"]
@@ -1281,9 +1339,54 @@ def start_control_server(app: App) -> bool:
                     import webbrowser
                     webbrowser.open(app.gdocs.doc_url())
                 return self._json({"ok": True})
+            if url.path == "/terms":
+                return self._json({"terms": read_custom_terms(), "sheet": str(VOCAB_XLSX),
+                                   "sheet_terms": len(p.vocab.canonical)})
+            if url.path == "/terms/open":
+                paths.open_folder(VOCAB_DIR)
+                return self._json({"ok": True})
             if url.path == "/quit":
                 app.quit = True
                 return self._json({"ok": True})
+            self._send(404, b"not found", "text/plain")
+
+        def do_POST(self):
+            # Only the desktop app posts (from its own process, never from a web page).
+            host = (self.headers.get("Host") or "").split(":")[0]
+            if host not in ("127.0.0.1", "localhost") or self.headers.get("Sec-Fetch-Site") or \
+                    self.headers.get("Origin"):
+                return self._send(403, b"forbidden", "text/plain")
+            url = urlparse(self.path)
+            size = int(self.headers.get("Content-Length") or 0)
+            if size > 16000 * 4 * 60 * 15:  # 15 minutes of audio
+                return self._send(413, b"too large", "text/plain")
+            body = self.rfile.read(size) if size else b""
+            if url.path == "/dictate":
+                import numpy as np
+                audio = np.frombuffer(body[: len(body) // 4 * 4], dtype="<f4")
+                try:
+                    return self._json(app.dictate(audio))
+                except Exception as e:
+                    log.exception("Dictation failed")
+                    return self._json({"ok": False, "error": f"{e.__class__.__name__}: {e}"})
+            if url.path == "/terms":
+                try:
+                    rows = json.loads(body or b"[]")
+                    if isinstance(rows, dict):  # also accept {"terms": [...]}, the shape GET returns
+                        rows = rows.get("terms", [])
+                    clean, seen = [], set()
+                    for r in rows if isinstance(rows, list) else []:
+                        row = {k: " ".join(str((r or {}).get(k) or "").split())[:200] for k in CUSTOM_TERMS_FIELDS}
+                        if row["term"] and row["term"].lower() not in seen:
+                            seen.add(row["term"].lower())
+                            clean.append(row)
+                    write_custom_terms(clean)
+                    with app.pipeline_lock:
+                        app.pipeline.vocab.reload_if_changed()
+                    app.configure_speech()  # new words also help the speech model hear them
+                    return self._json({"ok": True, "terms": clean})
+                except ValueError as e:
+                    return self._json({"ok": False, "error": str(e)})
             self._send(404, b"not found", "text/plain")
 
     try:
@@ -1304,7 +1407,26 @@ def install_overlay() -> None:
         shutil.copyfile(src, dst)
 
 
-def run(with_obs: bool = False, open_window: bool = False) -> None:
+def _process_alive(pid: int) -> bool:
+    if sys.platform == "win32":
+        import ctypes
+        h = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            return False
+        code = ctypes.c_ulong()
+        ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code))
+        ctypes.windll.kernel32.CloseHandle(h)
+        return code.value == 259  # STILL_ACTIVE
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def run(with_obs: bool = False, open_window: bool = False, parent_pid: int = 0) -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     install_overlay()
@@ -1362,7 +1484,9 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
     def show(raw: str, source: str, final: bool, display: bool = True) -> None:
         nonlocal last_caption_time
         t0 = time.time()
-        caption = pipeline.process(raw, source)
+        with app.pipeline_lock:
+            caption = pipeline.process(raw, source)
+            info = dict(pipeline.last)
         if not caption:
             return
         if display:
@@ -1370,7 +1494,6 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
             last_caption_time = time.time()
         if final:
             log_transcript(source, raw, caption)
-            info = pipeline.last
             pipeline.recorder.add(pipeline.mode, source, info.get("lang", ""),
                                   info.get("transcript", raw), caption, info.get("word", ""))
             if app.gdocs is not None:
@@ -1389,7 +1512,12 @@ def run(with_obs: bool = False, open_window: bool = False) -> None:
         # Keep going while captions are being written into a Google Doc.
         alive = obs_bridge.state(max_age=75) is not None
         obs_seen = obs_seen or alive
-        if with_obs:
+        if parent_pid:
+            # Started by the desktop app: run as long as it runs (it shows the controls).
+            if not _process_alive(parent_pid):
+                log.info("Desktop app closed: stopping")
+                break
+        elif with_obs:
             if (not alive and (obs_seen or now - started > 120) and not app.gdocs.active()
                     and now - app.last_client > 30):  # the app window may still be open
                 log.info("OBS is no longer running: stopping")
@@ -1533,6 +1661,9 @@ def main(argv=None) -> None:
     ap.add_argument("--with-obs", action="store_true",
                     help="started by the OBS script: stop when OBS closes")
     ap.add_argument("--no-window", action="store_true", help="don't open the app window")
+    ap.add_argument("--desktop", type=int, default=0, metavar="PID",
+                    help="started by the Live Captions desktop app (process PID): no browser window, "
+                         "stop when that app closes")
     ap.add_argument("--console", action="store_true", help="log to the terminal instead of translator.log")
     ap.add_argument("--test", action="store_true", help="translate sample sentences and exit")
     ap.add_argument("--test-modes", action="store_true", help="translate samples in every caption mode and exit")
@@ -1566,7 +1697,8 @@ def main(argv=None) -> None:
         self_test_modes()
     else:
         try:
-            run(with_obs=args.with_obs, open_window=not args.with_obs and not args.no_window)
+            run(with_obs=args.with_obs, open_window=not args.with_obs and not args.no_window and not args.desktop,
+                parent_pid=args.desktop)
         except Exception:
             log.exception("Translator crashed")
             raise

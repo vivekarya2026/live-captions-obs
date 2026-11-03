@@ -9,3 +9,4 @@ type: "constraint"
 - [[Caption style]] (must respect)
 - [[Model download]] (must respect)
 - [[Installers]] (must respect)
+- [[Desktop app]] (must respect)

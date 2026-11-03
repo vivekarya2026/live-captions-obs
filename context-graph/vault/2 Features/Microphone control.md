@@ -18,5 +18,6 @@ does: "Pick mic, volume, mute, on/off that releases the mic"
 - [[R14 Turn the mic on and off so it isn't always in use]] (answered by)
 - [[captions]] (part of)
 - [[mic]] (part of)
-- [[D09 Not signed by Apple-Microsoft]] (about)
+- [[D12 Not signed by Apple-Microsoft]] (about)
 - [[E05 Mic off releases the microphone]] (is evidence for)
+- [[E19 Desktop app with a real mic + shortcut, typing into another app]] (is evidence for)

@@ -19,6 +19,7 @@ does: "Auto, English->Hinglish, English->Hindi, Hindi->English"
 - [[tests-bench_meaning.py]] (checks)
 - [[tests-test_meaning.py]] (checks)
 - [[D03 Caption styles- Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites Engl]] (about)
+- [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)
 - [[E08 Offline pack installs with no Hugging Face]] (is evidence for)
 - [[E11 Caption styles fall back safely (late, too long, -Here is-, dropped-ad]] (is evidence for)
 - [[E13 Style model downloads on first use]] (is evidence for)

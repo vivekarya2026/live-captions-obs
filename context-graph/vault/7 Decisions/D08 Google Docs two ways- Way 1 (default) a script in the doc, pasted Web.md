@@ -14,3 +14,4 @@ revisit_when: "if many users outside the test list want Way 2: publish the app"
 - about [[App window and OBS dock]] *(keyword match)*
 - about [[Saved sessions]] *(keyword match)*
 - about [[Google Docs]] *(keyword match)*
+- about [[Desktop app]] *(keyword match)*

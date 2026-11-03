@@ -5,7 +5,8 @@ live streams, using the Nirankari vocabulary (Sewa, Simran, Satguru, Nirankar…
 exactly as in the vocabulary sheet).
 
 - **With OBS**: captions on your stream, a *Live Captions* panel in OBS to choose the language and mic.
-- **Without OBS**: its own window.
+- **Without OBS**: its own window, or the **desktop app** in the menu bar / tray, which also does
+  **dictation**: hold a key, speak Hindi or English, and the translated text is typed into any app.
 - **Google Docs**: writes the speech and its translation into a document as people speak.
 - Saves every session (transcript, translation, `.srt` subtitles, `.csv`) in *Documents → Live Captions*.
 - Polite captions: abusive words are removed.

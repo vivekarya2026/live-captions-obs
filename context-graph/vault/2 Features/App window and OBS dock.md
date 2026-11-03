@@ -18,5 +18,6 @@ does: "One local web page for every setting"
 - [[R10 Remove the screen OCR]] (answered by)
 - [[D07 The window is a local web page]] (about)
 - [[D08 Google Docs two ways- Way 1 (default) a script in the doc, pasted Web]] (about)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
 - [[E03 Windows installer builds]] (is evidence for)
 - [[E13 Style model downloads on first use]] (is evidence for)

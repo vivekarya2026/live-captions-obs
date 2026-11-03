@@ -15,3 +15,4 @@ does: "LocalVocal captions until Qwen3 is ready"
 
 ## Linked from
 - [[R05 Use LocalVocal inside OBS]] (answered by)
+- [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)

@@ -13,6 +13,10 @@ does: "Satsang terms kept exactly, with their meaning in English"
 ## Linked from
 - [[R03 95 to 100% accuracy]] (answered by)
 - [[R04 Only English to Hindi and Hindi to English, polite, no abusive words,]] (answered by)
+- [[R22 Deliver it with Handy's UI and features (dictation, history, overlay,]] (answered by)
 - [[tests-test_vocabulary.py]] (checks)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
+- [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)
 - [[E10 Vocabulary terms survive translation]] (is evidence for)
 - [[E11 Caption styles fall back safely (late, too long, -Here is-, dropped-ad]] (is evidence for)
+- [[E15 Custom words apply to dictation]] (is evidence for)

@@ -23,4 +23,5 @@ does: "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
 - [[tests-test_qwen_live.py]] (checks)
 - [[D01 Qwen3-ASR for speech]] (about)
 - [[D03 Caption styles- Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites Engl]] (about)
+- [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
 - [[E02 Intel .pkg works]] (is evidence for)

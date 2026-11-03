@@ -96,6 +96,21 @@ Ask the user to **quit OBS**, then from `app`:
 microphone, pick the language (e.g. Hindi → English), say a sentence and confirm captions appear.
 Suggest the **0.6B** speech model on Intel Macs and PCs without NVIDIA.
 
+### 7b. Desktop app (only if the user wants it)
+
+Needs Rust (`rustup`), Bun and CMake (`brew install cmake`). Engine steps 4–5 first.
+```
+cd desktop && bun install && bun run tauri build --bundles app   # Windows: --bundles nsis
+```
+The app is in `desktop/src-tauri/target/release/bundle/macos/Live Captions.app`. It finds the engine in
+this checkout's `.venv` (or set `LIVECAPTIONS_HOME=<project folder>`), and starts/stops it itself, so
+quit any other copy first (`curl -s http://127.0.0.1:8765/quit`).
+**Check:** open the app; the *Live Captions* page shows *ready* for the speech model. Ask the user to
+allow Microphone and Accessibility (Mac), hold the shortcut (default `⌥ Space` / `Ctrl+Space`), say a Hindi
+sentence in a text box and confirm English text is typed. Engine-only check without a mic:
+`say -v Lekha -o /tmp/hi.aiff "आज हम सब मिलकर सत्संग में सेवा करेंगे"`, convert to 16 kHz float32 and `POST` it
+to `/dictate` (see `docs/ARCHITECTURE.md` §5).
+
 ### 8. Google Docs (only if asked)
 
 Follow `docs/GOOGLE_DOCS.md`. The Google steps happen in the user's browser and account: walk
@@ -136,6 +151,11 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
   window (or `curl -s "http://127.0.0.1:8765/style?set=natural"`), wait until the note says *Ready*, say
   a long sentence; the caption should be reworded, and `translator.log` shows `Style …` lines when a
   sentence fell back to word for word. Speed on this computer: `tests/bench_meaning.py ~/.livecaptions/models/meaning`.
+- **Desktop app** (`desktop/`, Handy fork): after a change run `cd desktop && npx tsc --noEmit && bun run lint`
+  and `cd src-tauri && cargo test --lib`. New UI text goes in `src/i18n/locales/en/translation.json`
+  (the other 25 languages fall back to English). Never bring back Handy's name, logo or links, except the
+  credit in About and `THIRD_PARTY.md`. Engine routes it uses: `/state`, `/dictate`, `/terms` — change them
+  in `translator.py` and `live_captions.rs` together.
 - Keep it working on **all three**: Mac Apple Silicon, Mac Intel (PyTorch 2.2.2, NumPy < 2, CPU only)
   and Windows. Use `paths.py` for every folder; never hard-code a path.
 - Never commit models, `.venv`, `build/`, `dist/` (see `.gitignore`).

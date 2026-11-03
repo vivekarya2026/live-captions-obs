@@ -26,6 +26,7 @@ Rebuild with `python context-graph/build.py` after a change.
 - [[R19 DMG for Mac, easy Google Docs, option to remove time stamps]] · 2026-10-31 · **done**
 - [[R20 Google Docs setup that people who aren't technical can do]] · 2026-11-01 · **done**
 - [[R21 Captions that follow the meaning- word for word, natural or simple]] · 2026-11-01 · **done**
+- [[R22 Deliver it with Handy's UI and features (dictation, history, overlay,]] · 2026-11-01 · **partial**
 
 ## Rules for every change
 - [[C1 Runs offline on the computer; only Google Docs uses the internet (text]]
@@ -33,3 +34,4 @@ Rebuild with `python context-graph/build.py` after a change.
 - [[C3 Simple for people who aren't technical- plain words, few steps]]
 - [[C4 Non-commercial use only (NLLB-200 licence)]]
 - [[C5 Never stall the captions- fall back instead of waiting]]
+- [[C6 Keep Handy's MIT notice; no other Handy name, logo or link in the app]]

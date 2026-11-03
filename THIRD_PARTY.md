@@ -8,6 +8,9 @@ Live Captions downloads or bundles the following. Each keeps its own licence.
 | [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) 0.6B / 1.7B | speech recognition (downloaded on first start) | Apache 2.0 |
 | [NLLB-200 distilled 1.3B](https://huggingface.co/facebook/nllb-200-distilled-1.3B), [CTranslate2 int8 conversion](https://huggingface.co/OpenNMT/nllb-200-distilled-1.3B-ct2-int8) | translation (downloaded) | CC-BY-NC 4.0 (non-commercial) |
 | [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct), our CTranslate2 int8 conversion (`LiveCaptions-model-meaning.zip`) | caption styles *Natural* / *Simple* (downloaded only when chosen) | Apache 2.0 |
+| [Handy](https://github.com/cjpais/Handy) by CJ Pais and contributors | the desktop app in `desktop/` is a fork (UI, dictation, history, overlay, tray, onboarding). Not made or endorsed by Handy; its name and logos are removed. Notice: `desktop/LICENSE` | MIT |
+| [Tauri](https://tauri.app/), React, Tailwind CSS, i18next and the Rust / npm packages listed in `desktop/src-tauri/Cargo.toml` and `desktop/package.json` | desktop app | MIT / Apache 2.0 |
+| Whisper / Parakeet models via Handy (optional, *Built-in* speech engine only) | dictation without our engine (downloaded only when chosen) | MIT / CC-BY-4.0 |
 | [CTranslate2](https://github.com/OpenNMT/CTranslate2) | runs the translation model (bundled) | MIT |
 | [PyTorch](https://pytorch.org/) | runs the speech model (downloaded) | BSD-3-Clause |
 | [Silero VAD](https://github.com/snakers4/silero-vad) | detects when someone is speaking (downloaded) | MIT |

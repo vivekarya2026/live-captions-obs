@@ -44,6 +44,9 @@ REQUIREMENTS = {
             "Paste the Web app URL; the window names the fix for every wrong paste."),
     "R21": ("2026-11-01", "Captions that follow the meaning: word for word, natural or simple", "done",
             ["caption-styles"], "v1.1.0. On the computer, 1.5 s limit, word-for-word fallback."),
+    "R22": ("2026-11-01", "Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding",
+            "partial", ["desktop-app", "dictation", "custom-words", "vocabulary"],
+            "Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet."),
 }
 
 # Rules that hold for every change (from AGENTS.md and the conversations)
@@ -53,6 +56,7 @@ CONSTRAINTS = {
     "C3": "Simple for people who aren't technical: plain words, few steps",
     "C4": "Non-commercial use only (NLLB-200 licence)",
     "C5": "Never stall the captions: fall back instead of waiting",
+    "C6": "Keep Handy's MIT notice; no other Handy name, logo or link in the app",
 }
 
 # feature id: (name, what it does, files, constraints it must respect, keywords for linking docs/tests/decisions)
@@ -85,6 +89,15 @@ FEATURES = {
     "installers": ("Installers", "Mac .dmg/.pkg (arm64, x86_64), Windows Setup.exe",
                    ["/installer/macos/build.sh", "/installer/windows/build.ps1", "/.github/workflows/build.yml"],
                    ["C2", "C3"], ["installer", "pkg", "intel", "windows"]),
+    "desktop-app": ("Desktop app", "Handy fork (Tauri v2): menu bar / tray app with Live Captions, Vocabulary, Dictation, History, Models pages; starts the engine",
+                    ["/desktop/src-tauri/src/live_captions.rs", "/desktop/src/components/settings/live/LiveCaptionsSettings.tsx",
+                     "/desktop/src/hooks/useEngine.ts", "/desktop/src-tauri/tauri.conf.json", "translator.py"],
+                    ["C1", "C2", "C3", "C6"], ["desktop", "tauri", "handy"]),
+    "dictation": ("Dictation", "Hold a shortcut, speak, the translated text is typed into any app (POST /dictate)",
+                  ["/desktop/src-tauri/src/actions.rs", "/desktop/src-tauri/src/live_captions.rs", "translator.py", "qwen_engine.py"],
+                  ["C1", "C5"], ["dictat", "push-to-talk"]),
+    "custom-words": ("Custom words", "Words added in the app (custom_terms.csv), win over the sheet",
+                     ["/desktop/src/components/settings/live/VocabularySettings.tsx", "translator.py"], ["C3"], ["custom word", "custom_terms"]),
     "docs": ("Guides", "Setup guide, agent instructions, architecture map",
              ["/docs/SETUP_GUIDE.md", "/AGENTS.md", "/docs/ARCHITECTURE.md", "/docs/GOOGLE_DOCS.md"], ["C3"],
              ["guide", "setup from source"]),

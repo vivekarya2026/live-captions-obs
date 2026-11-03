@@ -9,3 +9,4 @@ type: "constraint"
 - [[Speech to text]] (must respect)
 - [[Whisper fallback]] (must respect)
 - [[Caption style]] (must respect)
+- [[Dictation]] (must respect)

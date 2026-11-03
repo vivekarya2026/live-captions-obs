@@ -27,6 +27,7 @@ END_SILENCE = 0.6           # seconds of silence that end a sentence (shorter cu
 MAX_SEGMENT = 10.0          # force a cut on very long sentences
 MIN_SPEECH = 0.35           # ignore clicks / coughs shorter than this
 PARTIAL_EVERY = 2.0         # partial caption while still speaking
+DICTATION_PIECE = 25.0      # push-to-talk recordings are transcribed in pieces of at most this
 QWEN_LANG = {"en": "English", "hi": "Hindi", "auto": None}
 
 
@@ -84,6 +85,7 @@ class QwenEngine:
         self._started = False
         self._seg_id = 0
         self._lock = threading.Lock()
+        self._infer_lock = threading.Lock()   # live captions and dictation take turns on the model
         self._mic_lock = threading.Lock()
         self._stop = False
 
@@ -112,6 +114,34 @@ class QwenEngine:
         log.info("Qwen3-ASR %s loaded on %s in %.1fs", key, device, time.time() - t0)
 
     # ---- audio -----------------------------------------------------------
+    def transcribe_clip(self, audio: np.ndarray) -> str:
+        """One whole recording (push-to-talk in the desktop app), 16 kHz mono.
+        Long recordings are cut at quiet moments into pieces the model handles well."""
+        with self._lock:
+            model = self.model
+        if model is None or len(audio) < SR // 4:
+            return ""
+        audio = np.asarray(audio, dtype=np.float32)
+        pieces, start, n = [], 0, len(audio)
+        step = int(DICTATION_PIECE * SR)
+        while n - start > step:
+            # quietest 100 ms in the last 5 s of this piece
+            lo, hi = start + step - 5 * SR, start + step
+            win = SR // 10
+            energy = [float(np.mean(audio[i:i + win] ** 2)) for i in range(lo, hi - win, win)]
+            cut = lo + win * int(np.argmin(energy)) + win // 2
+            pieces.append(audio[start:cut])
+            start = cut
+        pieces.append(audio[start:])
+        texts = []
+        for piece in pieces:
+            with self._infer_lock:
+                r = model.transcribe(audio=(piece, SR), language=self.language, context=self.context)
+            t = (r[0].text or "").strip()
+            if t:
+                texts.append(t)
+        return " ".join(texts)
+
     @property
     def enabled(self) -> bool:
         return self._enabled
@@ -254,7 +284,8 @@ class QwenEngine:
                 continue
             try:
                 t0 = time.time()
-                r = model.transcribe(audio=(audio, SR), language=self.language, context=self.context)
+                with self._infer_lock:
+                    r = model.transcribe(audio=(audio, SR), language=self.language, context=self.context)
                 text = (r[0].text or "").strip()
                 self._last_partial = (seg, speech_samples, text) if not final else (0, 0, "")
                 if text:

@@ -32,6 +32,7 @@ flowchart LR
   R19["R19 DMG for Mac, easy Google Docs,…"]:::done
   R20["R20 Google Docs setup that people who…"]:::done
   R21["R21 Captions that follow the meaning:…"]:::done
+  R22["R22 Deliver it with Handy's UI and…"]:::partial
   F_overlay(["Caption overlay"])
   F_dock(["App window and OBS dock"])
   F_obs_setup(["OBS setup"])
@@ -49,6 +50,9 @@ flowchart LR
   F_google_docs(["Google Docs"])
   F_model_download(["Model download"])
   F_installers(["Installers"])
+  F_desktop_app(["Desktop app"])
+  F_dictation(["Dictation"])
+  F_custom_words(["Custom words"])
   F_docs(["Guides"])
   R01 --> F_overlay
   R01 --> F_dock
@@ -85,6 +89,10 @@ flowchart LR
   R19 --> F_google_docs
   R20 --> F_google_docs
   R21 --> F_caption_styles
+  R22 --> F_desktop_app
+  R22 --> F_dictation
+  R22 --> F_custom_words
+  R22 --> F_vocabulary
   F_overlay --> translator_py[/translator.py/]
   F_dock --> translator_py[/translator.py/]
   F_obs_setup --> obs_setup_py[/obs_setup.py/]
@@ -110,6 +118,10 @@ flowchart LR
   F_google_docs --> gdocs_py[/gdocs.py/]
   F_model_download --> models_py[/models.py/]
   F_model_download --> paths_py[/paths.py/]
+  F_desktop_app --> translator_py[/translator.py/]
+  F_dictation --> translator_py[/translator.py/]
+  F_dictation --> qwen_engine_py[/qwen_engine.py/]
+  F_custom_words --> translator_py[/translator.py/]
   classDef done fill:#173326,stroke:#4cc38a,color:#e8e9ec
   classDef partial fill:#3a2f14,stroke:#f0b54a,color:#e8e9ec
   classDef changed fill:#2e3038,stroke:#9aa0aa,color:#c9ccd3
@@ -123,6 +135,7 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 
 - **R03** 95 to 100% accuracy: About 90% on Oct 30. Qwen3-ASR 1.7B, vocabulary context and spelling fixes raise it; no exact measure yet.
 - **R15** Intel Mac support: Built and run under Rosetta; not yet tested on a real Intel Mac.
+- **R22** Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding: Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet.
 
 ## Not proven yet
 
@@ -131,7 +144,9 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - Setup from source works: high (Mac), untested (Windows)
 - First-time download works from zero: high (Mac), **Windows not re-tested**
 - Caption styles: speed + quality: high (M4 Pro), **untested on Intel Mac / Windows**
+- Engine quits with the desktop app: high (Mac), **Windows untested**
+- Desktop app with a real mic + shortcut, typing into another app: untested
 
 ## Size
 
-5 constraints, 18 features, 21 requirements, 22 files, 14 routes, 5 tests, 9 decisions, 13 evidences, 12 releases, 218 links.
+6 constraints, 21 features, 22 requirements, 28 files, 17 routes, 5 tests, 12 decisions, 19 evidences, 12 releases, 271 links.
