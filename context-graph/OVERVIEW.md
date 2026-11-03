@@ -149,4 +149,4 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 
 ## Size
 
-6 constraints, 21 features, 22 requirements, 28 files, 17 routes, 5 tests, 12 decisions, 19 evidences, 12 releases, 271 links.
+6 constraints, 21 features, 22 requirements, 28 files, 17 routes, 5 tests, 12 decisions, 20 evidences, 12 releases, 275 links.

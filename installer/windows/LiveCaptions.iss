@@ -5,6 +5,19 @@
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
+; Desktop=1: the desktop app (live-captions.exe + resources\) next to python\ and app\
+#ifndef Desktop
+  #define Desktop "0"
+#endif
+#if Desktop == "1"
+  #define LaunchExe "{app}\live-captions.exe"
+  #define LaunchArgs ""
+  #define LaunchDir "{app}"
+#else
+  #define LaunchExe "{app}\python\pythonw.exe"
+  #define LaunchArgs "-m livecaptions"
+  #define LaunchDir "{app}\app"
+#endif
 
 [Setup]
 AppId={{6C1E2F4A-6F2B-4E7B-9C1D-7A51C0B2D3E4}
@@ -39,10 +52,13 @@ Source: "{#BuildDir}\python\*"; DestDir: "{app}\python"; Flags: recursesubdirs i
 Source: "{#BuildDir}\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs ignoreversion
 Source: "{#BuildDir}\obs\*"; DestDir: "{app}\obs"; Flags: recursesubdirs ignoreversion
 Source: "{#BuildDir}\LICENSE.txt"; DestDir: "{app}"
+#if Desktop == "1"
+Source: "{#BuildDir}\desktop\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+#endif
 
 [Icons]
-Name: "{userprograms}\Live Captions"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m livecaptions"; WorkingDir: "{app}\app"; Comment: "Live captions and translation"
-Name: "{userdesktop}\Live Captions"; Filename: "{app}\python\pythonw.exe"; Parameters: "-m livecaptions"; WorkingDir: "{app}\app"; Tasks: desktopicon
+Name: "{userprograms}\Live Captions"; Filename: "{#LaunchExe}"; Parameters: "{#LaunchArgs}"; WorkingDir: "{#LaunchDir}"; Comment: "Live captions, translation and dictation"
+Name: "{userdesktop}\Live Captions"; Filename: "{#LaunchExe}"; Parameters: "{#LaunchArgs}"; WorkingDir: "{#LaunchDir}"; Tasks: desktopicon
 
 [Run]
 ; Stop an older copy, add the script + dock to OBS (postponed if OBS is open), LocalVocal, then open the window
@@ -50,20 +66,31 @@ Filename: "{cmd}"; Parameters: "/C echo stop> ""%USERPROFILE%\.livecaptions\stop
 Filename: "{app}\python\python.exe"; Parameters: "-m livecaptions.obs_setup --later-if-open --script ""{app}\obs\live_captions.lua"""; WorkingDir: "{app}\app"; Flags: runhidden waituntilterminated; StatusMsg: "Adding Live Captions to OBS..."; Check: ObsInstalled
 Filename: "{app}\python\python.exe"; Parameters: "-m livecaptions.install_localvocal"; WorkingDir: "{app}\app"; Flags: runhidden waituntilterminated; StatusMsg: "Installing LocalVocal..."; Tasks: localvocal
 Filename: "{cmd}"; Parameters: "/C del /Q ""%USERPROFILE%\.livecaptions\stop_translator"""; Flags: runhidden; Check: DataDirExists
-Filename: "{app}\python\pythonw.exe"; Parameters: "-m livecaptions"; WorkingDir: "{app}\app"; Description: "Open Live Captions now"; Flags: postinstall nowait skipifsilent
+Filename: "{#LaunchExe}"; Parameters: "{#LaunchArgs}"; WorkingDir: "{#LaunchDir}"; Description: "Open Live Captions now"; Flags: postinstall nowait skipifsilent
 
 [UninstallRun]
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM live-captions.exe"; Flags: runhidden; RunOnceId: "StopDesktopApp"
 Filename: "{cmd}"; Parameters: "/C echo stop> ""%USERPROFILE%\.livecaptions\stop_translator"""; Flags: runhidden; RunOnceId: "StopLC"
 Filename: "{app}\python\python.exe"; Parameters: "-m livecaptions.obs_setup --remove"; WorkingDir: "{app}\app"; Flags: runhidden waituntilterminated; RunOnceId: "RemoveFromOBS"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\python"
+Type: filesandordirs; Name: "{app}\resources"
 
 [Code]
 function ObsInstalled: Boolean;
 begin
   Result := FileExists(ExpandConstant('{commonpf64}\obs-studio\bin\64bit\obs64.exe'));
+end;
+
+// A running desktop app locks live-captions.exe: close it before copying files.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM live-captions.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Result := '';
 end;
 
 function DataDirExists: Boolean;

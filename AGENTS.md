@@ -166,7 +166,9 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 2. Commit, then `git tag vX.Y.Z && git push origin main vX.Y.Z`.
 3. Watch `gh run list -L 1` / `gh run watch`. GitHub Actions builds Mac arm64, Mac x86_64 and
    Windows, then publishes the release.
-4. **Check:** `gh release view vX.Y.Z` lists three files.
+   The installers now contain the desktop app, so the release build also compiles `desktop/` (Rust):
+   expect ~20 min per job the first time.
+4. **Check:** `gh release view vX.Y.Z` lists five files (Mac arm64 + x86_64 `.pkg` and `.dmg`, Windows `Setup.exe`).
    Local builds: `installer/macos/build.sh` (`ARCH=x86_64` for Intel, works on Apple Silicon via
    Rosetta) and `installer\windows\build.ps1` (needs Inno Setup 6).
 

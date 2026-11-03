@@ -27,4 +27,5 @@ does: "Handy fork (Tauri v2): menu bar / tray app with Live Captions, Vocabulary
 - [[E14 Dictation endpoint]] (is evidence for)
 - [[E17 Engine quits with the desktop app]] (is evidence for)
 - [[E18 Desktop app code]] (is evidence for)
-- [[E19 Desktop app with a real mic + shortcut, typing into another app]] (is evidence for)
+- [[E19 Mac installer contains the desktop app]] (is evidence for)
+- [[E20 Desktop app with a real mic + shortcut, typing into another app]] (is evidence for)

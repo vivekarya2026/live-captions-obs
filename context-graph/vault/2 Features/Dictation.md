@@ -22,3 +22,4 @@ does: "Hold a shortcut, speak, the translated text is typed into any app (POST /
 - [[E14 Dictation endpoint]] (is evidence for)
 - [[E15 Custom words apply to dictation]] (is evidence for)
 - [[E16 Web pages can't post to the engine]] (is evidence for)
+- [[E19 Mac installer contains the desktop app]] (is evidence for)

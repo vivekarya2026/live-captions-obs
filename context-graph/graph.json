@@ -849,6 +849,14 @@
   {
    "id": "evidence:E19",
    "type": "evidence",
+   "name": "Mac installer contains the desktop app",
+   "how": "`ARCH=arm64 installer/macos/build.sh`: 60 MB `.pkg`; the app inside started the engine from its own `Resources/python` (not `.venv`), model ready, `/dictate` Hindi clip → *\"…sewa (selfless service) in satsang…\"*",
+   "date": "Nov 3 2026",
+   "confidence": "high (Apple Silicon), **Intel and Windows installers not built yet**"
+  },
+  {
+   "id": "evidence:E20",
+   "type": "evidence",
    "name": "Desktop app with a real mic + shortcut, typing into another app",
    "how": "**not yet tested by a person** (needs mic + Accessibility permission)",
    "date": "—",
@@ -1621,13 +1629,13 @@
   {
    "source": "file:app/livecaptions/install_localvocal.py",
    "type": "imports",
-   "target": "file:app/livecaptions/models.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/install_localvocal.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -1639,13 +1647,13 @@
   {
    "source": "file:app/livecaptions/obs_bridge.py",
    "type": "imports",
-   "target": "file:app/livecaptions/models.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/obs_bridge.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -1663,6 +1671,18 @@
   {
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
    "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
@@ -1673,15 +1693,27 @@
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/speech.py",
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/speech.py",
+   "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/qwen_engine.py",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
    "confidence": 1.0
   },
   {
@@ -1693,7 +1725,7 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -1706,30 +1738,6 @@
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
    "target": "file:app/livecaptions/meaning.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_setup.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -2461,11 +2469,35 @@
   {
    "source": "evidence:E19",
    "type": "proves",
-   "target": "feature:mic-control",
+   "target": "feature:caption-modes",
    "confidence": 0.6
   },
   {
    "source": "evidence:E19",
+   "type": "proves",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E19",
+   "type": "proves",
+   "target": "feature:desktop-app",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E19",
+   "type": "proves",
+   "target": "feature:dictation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E20",
+   "type": "proves",
+   "target": "feature:mic-control",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E20",
    "type": "proves",
    "target": "feature:desktop-app",
    "confidence": 0.6

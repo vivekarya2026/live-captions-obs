@@ -9,14 +9,14 @@ summary: "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish 
 **summary:** Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English.
 
 ## Links
-- uses [[app-livecaptions-gdocs.py]]
 - uses [[app-livecaptions-hinglish.py]]
+- uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-obs_bridge.py]]
+- uses [[app-livecaptions-obs_setup.py]]
+- uses [[app-livecaptions-gdocs.py]]
+- uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-speech.py]]
 - uses [[app-livecaptions-meaning.py]]
-- uses [[app-livecaptions-paths.py]]
-- uses [[app-livecaptions-obs_setup.py]]
-- uses [[app-livecaptions-obs_bridge.py]]
-- uses [[app-livecaptions-models.py]]
 
 ## Linked from
 - [[Caption overlay]] (built in)

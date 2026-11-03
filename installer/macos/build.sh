@@ -5,6 +5,11 @@
 #   ARCH=x86_64 installer/macos/build.sh     # Intel Macs (works on Apple Silicon via Rosetta)
 #   ARCH=arm64  installer/macos/build.sh     # Apple Silicon (M1 or newer)
 #   VERSION=1.2.0 installer/macos/build.sh
+#   DESKTOP=0 installer/macos/build.sh       # old launcher instead of the desktop app
+#
+# By default "Live Captions.app" is the desktop app (desktop/, Tauri: needs Rust, Bun and
+# CMake) with the engine inside it: Resources/{python,app,obs}. The app starts the engine
+# from there, and the OBS script finds the same Python.
 #
 # The package contains its own Python with the small packages (translation,
 # vocabulary); PyTorch + the speech and translation models download on first
@@ -15,9 +20,10 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VERSION="${VERSION:-$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$ROOT/app/livecaptions/__init__.py")}"
 ARCH="${ARCH:-$(uname -m)}"   # arm64 (Apple Silicon) or x86_64 (Intel)
+DESKTOP="${DESKTOP:-1}"
 case "$ARCH" in
-  arm64)  PBS_ARCH="aarch64"; CHIP="Apple Silicon (M1 or newer)" ;;
-  x86_64) PBS_ARCH="x86_64";  CHIP="an Intel processor" ;;
+  arm64)  PBS_ARCH="aarch64"; CHIP="Apple Silicon (M1 or newer)"; RUST_TARGET="aarch64-apple-darwin" ;;
+  x86_64) PBS_ARCH="x86_64";  CHIP="an Intel processor"; RUST_TARGET="x86_64-apple-darwin" ;;
   *) echo "unknown ARCH=$ARCH (use arm64 or x86_64)"; exit 1 ;;
 esac
 # Run pip etc. as the target CPU (an Intel build on Apple Silicon goes through Rosetta)
@@ -36,7 +42,17 @@ OUT="$ROOT/dist/LiveCaptions-${VERSION}-macOS-${ARCH}.pkg"
 
 echo "== Live Captions $VERSION for macOS ($ARCH)"
 rm -rf "$BUILD"
-mkdir -p "$CACHE" "$RES" "$APP/Contents/MacOS" "$ROOT/dist"
+mkdir -p "$CACHE" "$ROOT/dist" "$PKGROOT/Applications"
+
+# 0. The desktop app (menu bar app + dictation), or the plain launcher
+if [ "$DESKTOP" = "1" ]; then
+  echo "-- building the desktop app ($RUST_TARGET)"
+  rustup target add "$RUST_TARGET" >/dev/null 2>&1 || true
+  (cd "$ROOT/desktop" && bun install --frozen-lockfile >/dev/null && \
+     bun run tauri build --target "$RUST_TARGET" --bundles app)
+  ditto "$ROOT/desktop/src-tauri/target/$RUST_TARGET/release/bundle/macos/Live Captions.app" "$APP"
+fi
+mkdir -p "$RES" "$APP/Contents/MacOS"
 
 # 1. Python
 if [ ! -f "$CACHE/$PY_TARBALL" ]; then
@@ -65,14 +81,18 @@ chmod +x "$RES/uninstall.sh"
 "${RUN[@]}" "$PY" -m compileall -q "$RES/app" >/dev/null
 
 # 3. The app bundle (opens the Live Captions window; OBS starts it too)
-cat > "$APP/Contents/MacOS/LiveCaptions" <<'EOF'
+if [ "$DESKTOP" = "1" ]; then
+  cp "$ROOT/desktop/LICENSE" "$RES/LICENSE-Handy.txt"   # MIT notice of the desktop app's origin
+else
+  cat > "$APP/Contents/MacOS/LiveCaptions" <<'EOF'
 #!/bin/bash
 RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
 cd "$RES/app" && exec "$RES/python/bin/python3" -m livecaptions "$@"
 EOF
-chmod +x "$APP/Contents/MacOS/LiveCaptions"
-sed -e "s/@VERSION@/$VERSION/g" -e "s/@ARCH@/$ARCH/g" "$HERE/Info.plist" > "$APP/Contents/Info.plist"
-if [ -f "$HERE/AppIcon.icns" ]; then cp "$HERE/AppIcon.icns" "$RES/AppIcon.icns"; fi
+  chmod +x "$APP/Contents/MacOS/LiveCaptions"
+  sed -e "s/@VERSION@/$VERSION/g" -e "s/@ARCH@/$ARCH/g" "$HERE/Info.plist" > "$APP/Contents/Info.plist"
+  if [ -f "$HERE/AppIcon.icns" ]; then cp "$HERE/AppIcon.icns" "$RES/AppIcon.icns"; fi
+fi
 # Apple Silicon only runs signed code: ad-hoc signature (not an Apple Developer ID)
 codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || codesign --force --sign - "$APP"
 
@@ -101,7 +121,8 @@ Live Captions $VERSION for Macs with $CHIP
 1. Quit OBS if it is open.
 2. Double-click "Install Live Captions.pkg".
    If macOS says it can't be opened: System Settings -> Privacy & Security -> Open Anyway.
-3. The Live Captions window opens and downloads the models once (about 5 GB).
+3. Live Captions opens (its icon is in the menu bar) and downloads the models once (about 5 GB).
+   Allow Microphone and Accessibility when asked: Accessibility lets dictation type into other apps.
 
 Guide: https://github.com/vivekarya2026/live-captions-obs/blob/main/docs/SETUP_GUIDE.md
 EOF

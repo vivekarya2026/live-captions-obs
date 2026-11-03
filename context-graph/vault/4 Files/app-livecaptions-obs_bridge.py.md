@@ -9,8 +9,8 @@ summary: "Talks to OBS through the Live Captions OBS script (obs/live_captions.l
 **summary:** Talks to OBS through the Live Captions OBS script (obs/live_captions.lua),
 
 ## Links
-- uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-models.py]]
 
 ## Linked from
 - [[OBS setup]] (built in)

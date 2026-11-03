@@ -25,3 +25,4 @@ does: "Mac .dmg/.pkg (arm64, x86_64), Windows Setup.exe"
 - [[E01 Apple Silicon .pkg installs and runs]] (is evidence for)
 - [[E02 Intel .pkg works]] (is evidence for)
 - [[E03 Windows installer builds]] (is evidence for)
+- [[E19 Mac installer contains the desktop app]] (is evidence for)

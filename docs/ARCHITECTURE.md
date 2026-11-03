@@ -106,9 +106,9 @@ Outside the app:
 | `desktop/src/components/settings/live/` | The *Live Captions* and *Vocabulary* pages; `desktop/src/hooks/useEngine.ts` reads `/state` |
 | `desktop/src/i18n/locales/` | UI text in 26 languages (also builds the tray menu text) |
 | `obs/live_captions.lua` | The OBS script. It starts the app with OBS and adds the overlay. It looks for Python next to itself (installed) or in `.venv` (source) |
-| `installer/macos/` | Builds the `.pkg`. `ARCH=arm64` or `ARCH=x86_64` |
-| `installer/windows/` | Builds `Setup.exe` (Inno Setup) |
-| `.github/workflows/build.yml` | On a `v*` tag: builds both Mac packages and the Windows installer, then publishes a release |
+| `installer/macos/` | Builds the `.pkg`/`.dmg`. `ARCH=arm64` or `ARCH=x86_64`. By default `Live Captions.app` is the desktop app with `Resources/{python,app,obs}` inside; `DESKTOP=0` = old launcher |
+| `installer/windows/` | Builds `Setup.exe` (Inno Setup). By default installs `live-captions.exe` + `resources\` next to `python\` and `app\`; `$env:DESKTOP="0"` = old launcher |
+| `.github/workflows/build.yml` | On a `v*` tag: builds both Mac packages and the Windows installer (with Rust, Bun, CMake / Vulkan SDK for the desktop app), then publishes a release |
 | `tests/` | `test_vocabulary.py` (every term, every mode), `test_meaning.py` (caption-style fallbacks, no model needed), `bench_meaning.py` (style model speed test), `test_qwen_live.py` (speech), `test_gdocs_script.py` |
 | `docs/` | User guides (install, setup, Google Docs) and this map |
 | `context-graph/` | Every user request linked to the features, files, routes, tests, decisions and evidence behind it. `requirements.py` (edit by hand) → `build.py` → `graph.json`, `vault/` (Obsidian), `OVERVIEW.md`; ask it with `query.py` |
@@ -167,6 +167,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Web pages can't post to the engine | `POST /dictate` with `Origin` + `Sec-Fetch-Site: cross-site` → 403 | Nov 3 2026 | high |
 | Engine quits with the desktop app | Killed the `--desktop` parent PID → log *Desktop app closed: stopping*, no process left | Nov 3 2026 | high (Mac), **Windows untested** |
 | Desktop app code | `cargo test --lib` 338 passed; `tsc`, `eslint`, keyboard test pass | Nov 3 2026 | high |
+| Mac installer contains the desktop app | `ARCH=arm64 installer/macos/build.sh`: 60 MB `.pkg`; the app inside started the engine from its own `Resources/python` (not `.venv`), model ready, `/dictate` Hindi clip → *"…sewa (selfless service) in satsang…"* | Nov 3 2026 | high (Apple Silicon), **Intel and Windows installers not built yet** |
 | Desktop app with a real mic + shortcut, typing into another app | **not yet tested by a person** (needs mic + Accessibility permission) | — | untested |
 
 When you test something new, add a row. Results get stale: re-test after big updates

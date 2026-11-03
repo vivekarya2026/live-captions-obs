@@ -25,6 +25,15 @@ jobs:
       - name: Rosetta (for the Intel build)
         if: matrix.arch == 'x86_64'
         run: /usr/sbin/softwareupdate --install-rosetta --agree-to-license || true
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - name: CMake (desktop app speech libraries)
+        run: command -v cmake || brew install cmake
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
       - name: Build .pkg
         run: ARCH=${{ matrix.arch }} ./installer/macos/build.sh
       - uses: actions/upload-artifact@v4
@@ -37,7 +46,18 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
+      - name: Enable long paths
+        shell: pwsh
+        run: |
+          New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+            -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+          git config --system core.longpaths true
       - uses: actions/checkout@v4
+      - name: Vulkan SDK (desktop app speech libraries, as in Handy's CI)
+        uses: humbletim/install-vulkan-sdk@v1.2
+        with:
+          version: 1.4.309.0
+          cache: true
       - name: Google sign-in client (from the GOOGLE_OAUTH_CLIENT secret)
         shell: bash
         env:
@@ -48,6 +68,11 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - uses: oven-sh/setup-bun@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
       - name: Build Setup.exe
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File installer\windows\build.ps1

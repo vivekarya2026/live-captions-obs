@@ -23,3 +23,4 @@ does: "Auto, English->Hinglish, English->Hindi, Hindi->English"
 - [[E08 Offline pack installs with no Hugging Face]] (is evidence for)
 - [[E11 Caption styles fall back safely (late, too long, -Here is-, dropped-ad]] (is evidence for)
 - [[E13 Style model downloads on first use]] (is evidence for)
+- [[E19 Mac installer contains the desktop app]] (is evidence for)

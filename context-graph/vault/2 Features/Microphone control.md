@@ -20,4 +20,4 @@ does: "Pick mic, volume, mute, on/off that releases the mic"
 - [[mic]] (part of)
 - [[D12 Not signed by Apple-Microsoft]] (about)
 - [[E05 Mic off releases the microphone]] (is evidence for)
-- [[E19 Desktop app with a real mic + shortcut, typing into another app]] (is evidence for)
+- [[E20 Desktop app with a real mic + shortcut, typing into another app]] (is evidence for)
