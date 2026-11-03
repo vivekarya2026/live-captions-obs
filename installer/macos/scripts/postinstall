@@ -15,6 +15,8 @@ as_user() { sudo -u "$USER_NAME" -H env HOME="$HOME_DIR" PYTHONPATH="$RES/app" "
 {
   echo "Live Captions postinstall for $USER_NAME ($(date))"
   xattr -dr com.apple.quarantine "$APP" 2>/dev/null
+  # A 2.0.0 test build used another bundle id, so macOS put it beside the old app
+  rm -rf "/Applications/Live Captions.localized"
 
   # Stop an older Live Captions that may still be running
   mkdir -p "$HOME_DIR/.livecaptions" && touch "$HOME_DIR/.livecaptions/stop_translator"

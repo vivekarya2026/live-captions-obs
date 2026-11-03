@@ -120,7 +120,7 @@ Outside the app:
 | Models (~8 GB) | `~/.livecaptions/models/` | they download again |
 | PyTorch + speech packages | `~/.livecaptions/pylib/` | they install again on next start |
 | Settings, log, PID, custom words | `~/.livecaptions/` (`translator.log`, `custom_terms.csv`) | settings go back to default; custom words are gone |
-| Desktop app settings, dictation history + recordings | Mac: `~/Library/Application Support/org.livecaptions.desktop/` · Windows: `%APPDATA%\org.livecaptions.desktop` | history is gone |
+| Desktop app settings, dictation history + recordings | Mac: `~/Library/Application Support/org.livecaptions.obs/` · Windows: `%APPDATA%\org.livecaptions.obs` | history is gone |
 | Saved sessions | `Documents/Live Captions/` | your transcripts are gone (keep a copy) |
 | Installed app | Mac: `/Applications/Live Captions.app` · Windows: `%LOCALAPPDATA%\Programs\Live Captions` | reinstall |
 
