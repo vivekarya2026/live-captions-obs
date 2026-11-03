@@ -83,6 +83,7 @@ Outside the app:
 | `.github/workflows/build.yml` | On a `v*` tag: builds both Mac packages and the Windows installer, then publishes a release |
 | `tests/` | `test_vocabulary.py` (every term, every mode), `test_meaning.py` (caption-style fallbacks, no model needed), `bench_meaning.py` (style model speed test), `test_qwen_live.py` (speech), `test_gdocs_script.py` |
 | `docs/` | User guides (install, setup, Google Docs) and this map |
+| `context-graph/` | Every user request linked to the features, files, routes, tests, decisions and evidence behind it. `requirements.py` (edit by hand) → `build.py` → `graph.json`, `vault/` (Obsidian), `OVERVIEW.md`; ask it with `query.py` |
 
 ## 3. Where things are kept on a computer
 
@@ -108,7 +109,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Intel Macs pinned to PyTorch 2.2.2 + NumPy 1.x, CPU only | 2.2.2 is the last Intel Mac build | if Intel support is dropped |
 | Intel `.pkg` built on Apple Silicon via Rosetta | GitHub is retiring its Intel Mac machines | if the Rosetta build breaks |
 | The window is a local web page | Works the same on Mac, Windows and inside OBS; no UI toolkit to install | never |
-| Google Docs through Sign in with Google (OAuth desktop + PKCE, scope drive.file) and the Docs API | The Apps Script web app was 3 minutes of setup per doc and broke with "page not found"; drive.file sees only our own docs and needs no Google review | if many users outside the test list need it: publish the app |
+| Google Docs two ways: **Way 1** (default) a script in the doc, pasted Web app URL; **Way 2** Sign in with Google (OAuth desktop + PKCE, scope drive.file) and the Docs API | Way 1 needs no Google Cloud project and no test list, so anyone can do it; the window names the fix for every wrong paste or deployment setting (the old sidebar link broke with "page not found"). Way 2 makes a new doc per session but the Gmail must be on the test list | if many users outside the test list want Way 2: publish the app |
 | Not signed by Apple/Microsoft | Signing costs money every year; the guide explains the one-time prompt | if many users get stuck on the prompt |
 
 ## 5. What has been tested (and what hasn't)

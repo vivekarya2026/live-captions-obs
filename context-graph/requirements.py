@@ -1,0 +1,92 @@
+"""What was asked for, and how the project answers it. Edit this file by hand;
+then run `python context-graph/build.py`. Everything about the code (files, imports,
+routes, tests) is read from the code itself, so only this file needs keeping up to date.
+
+status: done | partial | changed | dropped
+"""
+
+# id: (date asked, plain request, status, features that answer it, note)
+REQUIREMENTS = {
+    "R01": ("2026-10-24", "Live captions for live streaming in OBS", "done",
+            ["overlay", "dock", "obs-setup"], "Captions show on the stream through an OBS browser source."),
+    "R02": ("2026-10-25", "Hindi and Punjabi languages", "changed",
+            ["caption-modes"], "Narrowed on Oct 27 to English and Hindi only (R04). Punjabi left with the screen OCR (R10)."),
+    "R03": ("2026-10-25", "95 to 100% accuracy", "partial",
+            ["speech", "vocabulary", "spelling-fixes"], "About 90% on Oct 30. Qwen3-ASR 1.7B, vocabulary context and spelling fixes raise it; no exact measure yet."),
+    "R04": ("2026-10-27", "Only English to Hindi and Hindi to English, polite, no abusive words, use the vocabulary sheet", "done",
+            ["translation", "vocabulary", "blocked-words"], "Other languages are dropped as noise."),
+    "R05": ("2026-10-27", "Use LocalVocal inside OBS", "done",
+            ["whisper-fallback"], "Now only until Qwen3-ASR has downloaded."),
+    "R06": ("2026-10-29", "Pick the audio input and test transcription myself", "done",
+            ["mic-control", "speech"], "Mic picker in the window; tests/test_qwen_live.py."),
+    "R07": ("2026-10-29", "Lower latency, faster captions, switch language both ways", "done",
+            ["speech", "caption-modes", "translation"], "Greedy NLLB, 0.6B default, live partial captions."),
+    "R08": ("2026-10-29", "English to Hinglish and Hindi/Hinglish to English", "done",
+            ["hinglish", "caption-modes"], "AI4Bharat Vistaar was tried; Qwen3-ASR replaced it."),
+    "R09": ("2026-10-29", "Run everything from OBS, language panel inside a dock, never get stuck, collapsible", "done",
+            ["dock", "obs-setup"], "The dock is the same page as the app window."),
+    "R10": ("2026-10-29", "Remove the screen OCR", "done", ["dock"], "OCR code removed; old prototype stays in the OCR folder."),
+    "R11": ("2026-10-29", "An installable package for any computer, OS and OBS", "done",
+            ["installers", "model-download"], "Mac arm64 + Intel (.dmg/.pkg), Windows Setup.exe, built by GitHub Actions."),
+    "R12": ("2026-10-29", "Use Qwen3-ASR for lower latency", "done", ["speech"], "0.6B default, 1.7B option."),
+    "R13": ("2026-10-30", "Write captions into Google Docs", "done", ["google-docs"], "Way 1 script in the doc, Way 2 Sign in with Google."),
+    "R14": ("2026-10-30", "Turn the mic on and off so it isn't always in use", "done", ["mic-control"], "Off releases the microphone for real."),
+    "R15": ("2026-10-30", "Intel Mac support", "partial", ["installers", "model-download"],
+            "Built and run under Rosetta; not yet tested on a real Intel Mac."),
+    "R16": ("2026-10-31", "Step-by-step setup guide for other computers with Cursor, and instructions for a coding agent", "done",
+            ["docs"], "docs/SETUP_GUIDE.md and AGENTS.md."),
+    "R17": ("2026-10-31", "A short message the team can follow", "done", ["docs"], "Given in chat for each release."),
+    "R18": ("2026-10-31", "Fix the first download stuck at 0%", "done", ["model-download"],
+            "Timeouts, plain HTTPS, GitHub fallback, offline packs."),
+    "R19": ("2026-10-31", "DMG for Mac, easy Google Docs, option to remove time stamps", "done",
+            ["installers", "google-docs"], ""),
+    "R20": ("2026-11-01", "Google Docs setup that people who aren't technical can do", "done", ["google-docs"],
+            "Paste the Web app URL; the window names the fix for every wrong paste."),
+    "R21": ("2026-11-01", "Captions that follow the meaning: word for word, natural or simple", "done",
+            ["caption-styles"], "v1.1.0. On the computer, 1.5 s limit, word-for-word fallback."),
+}
+
+# Rules that hold for every change (from AGENTS.md and the conversations)
+CONSTRAINTS = {
+    "C1": "Runs offline on the computer; only Google Docs uses the internet (text only)",
+    "C2": "Works on Mac Apple Silicon, Mac Intel and Windows",
+    "C3": "Simple for people who aren't technical: plain words, few steps",
+    "C4": "Non-commercial use only (NLLB-200 licence)",
+    "C5": "Never stall the captions: fall back instead of waiting",
+}
+
+# feature id: (name, what it does, files, constraints it must respect, keywords for linking docs/tests/decisions)
+FEATURES = {
+    "overlay": ("Caption overlay", "Text on the stream", ["data/overlay.html", "translator.py"], ["C5"], ["overlay"]),
+    "dock": ("App window and OBS dock", "One local web page for every setting", ["dock.html", "translator.py"], ["C3"],
+             ["window", "dock"]),
+    "obs-setup": ("OBS setup", "Adds the script, overlay and dock to OBS", ["obs_setup.py", "obs_bridge.py"], ["C3"], ["obs"]),
+    "speech": ("Speech to text", "Qwen3-ASR 0.6B / 1.7B on the computer's own mic", ["qwen_engine.py", "speech.py"],
+               ["C1", "C2", "C5"], ["qwen3", "speech", "asr"]),
+    "whisper-fallback": ("Whisper fallback", "LocalVocal captions until Qwen3 is ready",
+                         ["speech.py", "obs_bridge.py", "install_localvocal.py"], ["C5"], ["whisper", "localvocal"]),
+    "translation": ("Translation", "NLLB-200 1.3B int8, Hindi <-> English", ["translator.py"], ["C1", "C4"], ["nllb", "translation"]),
+    "hinglish": ("Hinglish", "Hindi in Roman letters, both ways", ["hinglish.py", "translator.py"], [], ["hinglish"]),
+    "caption-modes": ("Caption language", "Auto, English->Hinglish, English->Hindi, Hindi->English", ["translator.py", "dock.html"],
+                      [], ["mode", "language"]),
+    "caption-styles": ("Caption style", "Word for word / Natural / Simple (Qwen2.5 0.5B rewrites English)",
+                       ["meaning.py", "translator.py", "dock.html", "models.py"], ["C1", "C2", "C5"], ["style", "meaning", "qwen2.5"]),
+    "vocabulary": ("Vocabulary terms", "Satsang terms kept exactly, with their meaning in English", ["translator.py"], [],
+                   ["vocabulary", "term"]),
+    "blocked-words": ("Polite captions", "Abusive words removed before and after translation", ["translator.py"], [], ["blocked", "abusive"]),
+    "spelling-fixes": ("Spelling fixes", "Snaps misheard words to the right spelling", ["translator.py"], [], ["spelling", "misheard"]),
+    "mic-control": ("Microphone control", "Pick mic, volume, mute, on/off that releases the mic", ["qwen_engine.py", "speech.py", "dock.html"],
+                    ["C3"], ["mic", "microphone"]),
+    "sessions": ("Saved sessions", "Transcript, translation, bilingual, .srt, .csv per session", ["translator.py"], [], ["session"]),
+    "google-docs": ("Google Docs", "Script web app (Way 1) or Sign in with Google (Way 2)",
+                    ["gdocs.py", "data/google-docs/LiveCaptions.gs", "dock.html"], ["C3"], ["google"]),
+    "model-download": ("Model download", "First-run download with progress, GitHub fallback, offline packs", ["models.py", "paths.py"],
+                       ["C2", "C3"], ["download", "pack", "pytorch"]),
+    "installers": ("Installers", "Mac .dmg/.pkg (arm64, x86_64), Windows Setup.exe",
+                   ["/installer/macos/build.sh", "/installer/windows/build.ps1", "/.github/workflows/build.yml"],
+                   ["C2", "C3"], ["installer", "pkg", "intel", "windows"]),
+    "docs": ("Guides", "Setup guide, agent instructions, architecture map",
+             ["/docs/SETUP_GUIDE.md", "/AGENTS.md", "/docs/ARCHITECTURE.md", "/docs/GOOGLE_DOCS.md"], ["C3"],
+             ["guide", "setup from source"]),
+}
+# Files: names are inside app/livecaptions/; a leading "/" means from the project folder.

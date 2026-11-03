@@ -123,6 +123,11 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 ## Task C: change the code
 
 - Find the file in the table in `docs/ARCHITECTURE.md`. The pipeline hub is `app/livecaptions/translator.py`.
+- **Before changing a file**, ask the context graph what depends on it: `python3 context-graph/query.py meaning.py`
+  (or a request: `query.py R21`; open work: `query.py --open`). It lists the user's requests, rules, tests
+  and evidence behind that file. **After** a change that adds a feature, file, decision or test, add the
+  request/feature to `context-graph/requirements.py` if new, then run `python3 context-graph/build.py`
+  (must end `every request reaches code; no unlinked nodes`) and commit the result.
 - **Vocabulary** words: edit `app/livecaptions/data/vocabulary/Vocabulary_for_Live_Translations.xlsx`
   (or `hindi_terms.csv`), not the code. Changes apply live.
 - After any change run `--test` and `tests/test_vocabulary.py`. Both must pass.

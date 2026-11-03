@@ -1,0 +1,2083 @@
+{
+ "about": "Live Captions context graph: requests -> features -> files/tests/decisions. Built by context-graph/build.py.",
+ "nodes": [
+  {
+   "id": "constraint:C1",
+   "type": "constraint",
+   "name": "Runs offline on the computer; only Google Docs uses the internet (text only)"
+  },
+  {
+   "id": "constraint:C2",
+   "type": "constraint",
+   "name": "Works on Mac Apple Silicon, Mac Intel and Windows"
+  },
+  {
+   "id": "constraint:C3",
+   "type": "constraint",
+   "name": "Simple for people who aren't technical: plain words, few steps"
+  },
+  {
+   "id": "constraint:C4",
+   "type": "constraint",
+   "name": "Non-commercial use only (NLLB-200 licence)"
+  },
+  {
+   "id": "constraint:C5",
+   "type": "constraint",
+   "name": "Never stall the captions: fall back instead of waiting"
+  },
+  {
+   "id": "feature:overlay",
+   "type": "feature",
+   "name": "Caption overlay",
+   "does": "Text on the stream"
+  },
+  {
+   "id": "feature:dock",
+   "type": "feature",
+   "name": "App window and OBS dock",
+   "does": "One local web page for every setting"
+  },
+  {
+   "id": "feature:obs-setup",
+   "type": "feature",
+   "name": "OBS setup",
+   "does": "Adds the script, overlay and dock to OBS"
+  },
+  {
+   "id": "feature:speech",
+   "type": "feature",
+   "name": "Speech to text",
+   "does": "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
+  },
+  {
+   "id": "feature:whisper-fallback",
+   "type": "feature",
+   "name": "Whisper fallback",
+   "does": "LocalVocal captions until Qwen3 is ready"
+  },
+  {
+   "id": "feature:translation",
+   "type": "feature",
+   "name": "Translation",
+   "does": "NLLB-200 1.3B int8, Hindi <-> English"
+  },
+  {
+   "id": "feature:hinglish",
+   "type": "feature",
+   "name": "Hinglish",
+   "does": "Hindi in Roman letters, both ways"
+  },
+  {
+   "id": "feature:caption-modes",
+   "type": "feature",
+   "name": "Caption language",
+   "does": "Auto, English->Hinglish, English->Hindi, Hindi->English"
+  },
+  {
+   "id": "feature:caption-styles",
+   "type": "feature",
+   "name": "Caption style",
+   "does": "Word for word / Natural / Simple (Qwen2.5 0.5B rewrites English)"
+  },
+  {
+   "id": "feature:vocabulary",
+   "type": "feature",
+   "name": "Vocabulary terms",
+   "does": "Satsang terms kept exactly, with their meaning in English"
+  },
+  {
+   "id": "feature:blocked-words",
+   "type": "feature",
+   "name": "Polite captions",
+   "does": "Abusive words removed before and after translation"
+  },
+  {
+   "id": "feature:spelling-fixes",
+   "type": "feature",
+   "name": "Spelling fixes",
+   "does": "Snaps misheard words to the right spelling"
+  },
+  {
+   "id": "feature:mic-control",
+   "type": "feature",
+   "name": "Microphone control",
+   "does": "Pick mic, volume, mute, on/off that releases the mic"
+  },
+  {
+   "id": "feature:sessions",
+   "type": "feature",
+   "name": "Saved sessions",
+   "does": "Transcript, translation, bilingual, .srt, .csv per session"
+  },
+  {
+   "id": "feature:google-docs",
+   "type": "feature",
+   "name": "Google Docs",
+   "does": "Script web app (Way 1) or Sign in with Google (Way 2)"
+  },
+  {
+   "id": "feature:model-download",
+   "type": "feature",
+   "name": "Model download",
+   "does": "First-run download with progress, GitHub fallback, offline packs"
+  },
+  {
+   "id": "feature:installers",
+   "type": "feature",
+   "name": "Installers",
+   "does": "Mac .dmg/.pkg (arm64, x86_64), Windows Setup.exe"
+  },
+  {
+   "id": "feature:docs",
+   "type": "feature",
+   "name": "Guides",
+   "does": "Setup guide, agent instructions, architecture map"
+  },
+  {
+   "id": "req:R01",
+   "type": "requirement",
+   "name": "Live captions for live streaming in OBS",
+   "date": "2026-10-24",
+   "status": "done",
+   "note": "Captions show on the stream through an OBS browser source."
+  },
+  {
+   "id": "req:R02",
+   "type": "requirement",
+   "name": "Hindi and Punjabi languages",
+   "date": "2026-10-25",
+   "status": "changed",
+   "note": "Narrowed on Oct 27 to English and Hindi only (R04). Punjabi left with the screen OCR (R10)."
+  },
+  {
+   "id": "req:R03",
+   "type": "requirement",
+   "name": "95 to 100% accuracy",
+   "date": "2026-10-25",
+   "status": "partial",
+   "note": "About 90% on Oct 30. Qwen3-ASR 1.7B, vocabulary context and spelling fixes raise it; no exact measure yet."
+  },
+  {
+   "id": "req:R04",
+   "type": "requirement",
+   "name": "Only English to Hindi and Hindi to English, polite, no abusive words, use the vocabulary sheet",
+   "date": "2026-10-27",
+   "status": "done",
+   "note": "Other languages are dropped as noise."
+  },
+  {
+   "id": "req:R05",
+   "type": "requirement",
+   "name": "Use LocalVocal inside OBS",
+   "date": "2026-10-27",
+   "status": "done",
+   "note": "Now only until Qwen3-ASR has downloaded."
+  },
+  {
+   "id": "req:R06",
+   "type": "requirement",
+   "name": "Pick the audio input and test transcription myself",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "Mic picker in the window; tests/test_qwen_live.py."
+  },
+  {
+   "id": "req:R07",
+   "type": "requirement",
+   "name": "Lower latency, faster captions, switch language both ways",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "Greedy NLLB, 0.6B default, live partial captions."
+  },
+  {
+   "id": "req:R08",
+   "type": "requirement",
+   "name": "English to Hinglish and Hindi/Hinglish to English",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "AI4Bharat Vistaar was tried; Qwen3-ASR replaced it."
+  },
+  {
+   "id": "req:R09",
+   "type": "requirement",
+   "name": "Run everything from OBS, language panel inside a dock, never get stuck, collapsible",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "The dock is the same page as the app window."
+  },
+  {
+   "id": "req:R10",
+   "type": "requirement",
+   "name": "Remove the screen OCR",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "OCR code removed; old prototype stays in the OCR folder."
+  },
+  {
+   "id": "req:R11",
+   "type": "requirement",
+   "name": "An installable package for any computer, OS and OBS",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "Mac arm64 + Intel (.dmg/.pkg), Windows Setup.exe, built by GitHub Actions."
+  },
+  {
+   "id": "req:R12",
+   "type": "requirement",
+   "name": "Use Qwen3-ASR for lower latency",
+   "date": "2026-10-29",
+   "status": "done",
+   "note": "0.6B default, 1.7B option."
+  },
+  {
+   "id": "req:R13",
+   "type": "requirement",
+   "name": "Write captions into Google Docs",
+   "date": "2026-10-30",
+   "status": "done",
+   "note": "Way 1 script in the doc, Way 2 Sign in with Google."
+  },
+  {
+   "id": "req:R14",
+   "type": "requirement",
+   "name": "Turn the mic on and off so it isn't always in use",
+   "date": "2026-10-30",
+   "status": "done",
+   "note": "Off releases the microphone for real."
+  },
+  {
+   "id": "req:R15",
+   "type": "requirement",
+   "name": "Intel Mac support",
+   "date": "2026-10-30",
+   "status": "partial",
+   "note": "Built and run under Rosetta; not yet tested on a real Intel Mac."
+  },
+  {
+   "id": "req:R16",
+   "type": "requirement",
+   "name": "Step-by-step setup guide for other computers with Cursor, and instructions for a coding agent",
+   "date": "2026-10-31",
+   "status": "done",
+   "note": "docs/SETUP_GUIDE.md and AGENTS.md."
+  },
+  {
+   "id": "req:R17",
+   "type": "requirement",
+   "name": "A short message the team can follow",
+   "date": "2026-10-31",
+   "status": "done",
+   "note": "Given in chat for each release."
+  },
+  {
+   "id": "req:R18",
+   "type": "requirement",
+   "name": "Fix the first download stuck at 0%",
+   "date": "2026-10-31",
+   "status": "done",
+   "note": "Timeouts, plain HTTPS, GitHub fallback, offline packs."
+  },
+  {
+   "id": "req:R19",
+   "type": "requirement",
+   "name": "DMG for Mac, easy Google Docs, option to remove time stamps",
+   "date": "2026-10-31",
+   "status": "done",
+   "note": ""
+  },
+  {
+   "id": "req:R20",
+   "type": "requirement",
+   "name": "Google Docs setup that people who aren't technical can do",
+   "date": "2026-11-01",
+   "status": "done",
+   "note": "Paste the Web app URL; the window names the fix for every wrong paste."
+  },
+  {
+   "id": "req:R21",
+   "type": "requirement",
+   "name": "Captions that follow the meaning: word for word, natural or simple",
+   "date": "2026-11-01",
+   "status": "done",
+   "note": "v1.1.0. On the computer, 1.5 s limit, word-for-word fallback."
+  },
+  {
+   "id": "file:app/livecaptions/__main__.py",
+   "type": "file",
+   "name": "app/livecaptions/__main__.py",
+   "lines": 3,
+   "summary": ""
+  },
+  {
+   "id": "file:app/livecaptions/gdocs.py",
+   "type": "file",
+   "name": "app/livecaptions/gdocs.py",
+   "lines": 444,
+   "summary": "Writes captions into Google Docs, two ways:"
+  },
+  {
+   "id": "file:app/livecaptions/hinglish.py",
+   "type": "file",
+   "name": "app/livecaptions/hinglish.py",
+   "lines": 347,
+   "summary": "Devanagari Hindi <-> Hinglish (Hindi written in everyday Roman letters)."
+  },
+  {
+   "id": "file:app/livecaptions/install_localvocal.py",
+   "type": "file",
+   "name": "app/livecaptions/install_localvocal.py",
+   "lines": 86,
+   "summary": "Installs the LocalVocal OBS plugin (Whisper speech recognition inside OBS),"
+  },
+  {
+   "id": "file:app/livecaptions/meaning.py",
+   "type": "file",
+   "name": "app/livecaptions/meaning.py",
+   "lines": 165,
+   "summary": "Caption styles that follow the meaning, not every word."
+  },
+  {
+   "id": "file:app/livecaptions/models.py",
+   "type": "file",
+   "name": "app/livecaptions/models.py",
+   "lines": 335,
+   "summary": "First-run setup: downloads the speech and translation models (and the"
+  },
+  {
+   "id": "file:app/livecaptions/obs_bridge.py",
+   "type": "file",
+   "name": "app/livecaptions/obs_bridge.py",
+   "lines": 127,
+   "summary": "Talks to OBS through the Live Captions OBS script (obs/live_captions.lua),"
+  },
+  {
+   "id": "file:app/livecaptions/obs_setup.py",
+   "type": "file",
+   "name": "app/livecaptions/obs_setup.py",
+   "lines": 154,
+   "summary": "Adds Live Captions to OBS (run by the installer while OBS is closed):"
+  },
+  {
+   "id": "file:app/livecaptions/paths.py",
+   "type": "file",
+   "name": "app/livecaptions/paths.py",
+   "lines": 66,
+   "summary": "Where Live Captions keeps its files, on macOS and Windows."
+  },
+  {
+   "id": "file:app/livecaptions/qwen_engine.py",
+   "type": "file",
+   "name": "app/livecaptions/qwen_engine.py",
+   "lines": 265,
+   "summary": "Qwen3-ASR speech recognition: listens to the microphone itself (so it works"
+  },
+  {
+   "id": "file:app/livecaptions/speech.py",
+   "type": "file",
+   "name": "app/livecaptions/speech.py",
+   "lines": 225,
+   "summary": "Chooses the speech engine:"
+  },
+  {
+   "id": "file:app/livecaptions/translator.py",
+   "type": "file",
+   "name": "app/livecaptions/translator.py",
+   "lines": 1576,
+   "summary": "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English."
+  },
+  {
+   "id": "file:app/livecaptions/dock.html",
+   "type": "file",
+   "name": "app/livecaptions/dock.html",
+   "lines": 411,
+   "summary": ""
+  },
+  {
+   "id": "file:app/livecaptions/data/overlay.html",
+   "type": "file",
+   "name": "app/livecaptions/data/overlay.html",
+   "lines": 59,
+   "summary": ""
+  },
+  {
+   "id": "file:app/livecaptions/data/google-docs/LiveCaptions.gs",
+   "type": "file",
+   "name": "app/livecaptions/data/google-docs/LiveCaptions.gs",
+   "lines": 87,
+   "summary": ""
+  },
+  {
+   "id": "file:installer/macos/build.sh",
+   "type": "file",
+   "name": "installer/macos/build.sh"
+  },
+  {
+   "id": "file:installer/windows/build.ps1",
+   "type": "file",
+   "name": "installer/windows/build.ps1"
+  },
+  {
+   "id": "file:.github/workflows/build.yml",
+   "type": "file",
+   "name": ".github/workflows/build.yml"
+  },
+  {
+   "id": "file:docs/SETUP_GUIDE.md",
+   "type": "file",
+   "name": "docs/SETUP_GUIDE.md"
+  },
+  {
+   "id": "file:AGENTS.md",
+   "type": "file",
+   "name": "AGENTS.md"
+  },
+  {
+   "id": "file:docs/ARCHITECTURE.md",
+   "type": "file",
+   "name": "docs/ARCHITECTURE.md"
+  },
+  {
+   "id": "file:docs/GOOGLE_DOCS.md",
+   "type": "file",
+   "name": "docs/GOOGLE_DOCS.md"
+  },
+  {
+   "id": "route:/",
+   "type": "route",
+   "name": "/"
+  },
+  {
+   "id": "route:/captions",
+   "type": "route",
+   "name": "/captions"
+  },
+  {
+   "id": "route:/gdocs",
+   "type": "route",
+   "name": "/gdocs"
+  },
+  {
+   "id": "route:/gdocs/oauth",
+   "type": "route",
+   "name": "/gdocs/oauth"
+  },
+  {
+   "id": "route:/gdocs/open",
+   "type": "route",
+   "name": "/gdocs/open"
+  },
+  {
+   "id": "route:/gdocs/script",
+   "type": "route",
+   "name": "/gdocs/script"
+  },
+  {
+   "id": "route:/mic",
+   "type": "route",
+   "name": "/mic"
+  },
+  {
+   "id": "route:/mode",
+   "type": "route",
+   "name": "/mode"
+  },
+  {
+   "id": "route:/quit",
+   "type": "route",
+   "name": "/quit"
+  },
+  {
+   "id": "route:/session/new",
+   "type": "route",
+   "name": "/session/new"
+  },
+  {
+   "id": "route:/session/open",
+   "type": "route",
+   "name": "/session/open"
+  },
+  {
+   "id": "route:/setup/retry",
+   "type": "route",
+   "name": "/setup/retry"
+  },
+  {
+   "id": "route:/speech",
+   "type": "route",
+   "name": "/speech"
+  },
+  {
+   "id": "route:/style",
+   "type": "route",
+   "name": "/style"
+  },
+  {
+   "id": "test:tests/bench_meaning.py",
+   "type": "test",
+   "name": "tests/bench_meaning.py",
+   "summary": "Speed + quality test for the caption-style models (Natural / Simple)."
+  },
+  {
+   "id": "test:tests/test_gdocs_script.py",
+   "type": "test",
+   "name": "tests/test_gdocs_script.py",
+   "summary": "Google Docs \"script in my doc\": the real LiveCaptions.gs (run in Node with fake Google"
+  },
+  {
+   "id": "test:tests/test_meaning.py",
+   "type": "test",
+   "name": "tests/test_meaning.py",
+   "summary": "Caption styles (meaning.py): every fallback rule, with a fake model (no download)."
+  },
+  {
+   "id": "test:tests/test_qwen_live.py",
+   "type": "test",
+   "name": "tests/test_qwen_live.py",
+   "summary": "Developer test: feed WAV clips through the Qwen3 engine (VAD + ASR, real-time"
+  },
+  {
+   "id": "test:tests/test_vocabulary.py",
+   "type": "test",
+   "name": "tests/test_vocabulary.py",
+   "summary": "Checks every row of the vocabulary sheet through the real caption pipeline:"
+  },
+  {
+   "id": "decision:D01",
+   "type": "decision",
+   "name": "Qwen3-ASR for speech",
+   "why": "Best Hindi + English accuracy in our tests; 0.6B is fast, 1.7B more accurate",
+   "revisit_when": "a better offline Hindi model appears"
+  },
+  {
+   "id": "decision:D02",
+   "type": "decision",
+   "name": "NLLB-200 (CTranslate2, int8) for translation",
+   "why": "Offline, good Hindi ↔ English, small",
+   "revisit_when": "licence needs change (NLLB is non-commercial)"
+  },
+  {
+   "id": "decision:D03",
+   "type": "decision",
+   "name": "Caption styles: Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites English only, greedy, 1.5 s limit",
+   "why": "Speed test on 30 real lines (M4 Pro): 0.5B median 0.5 s Natural / 0.4 s Simple, never over 1.5 s; 1.5B was nicer but median 1.4 s with 12/30 Natural over 1.5 s. Qwen3-1.7B: fewest rejections but median 1.7 s, 23/30 Natural over 1.5 s. The small model sometimes changes the meaning, so strict checks fall back to word for word",
+   "revisit_when": "a faster computer target, or the checks reject too often: try 1.5B (`tests/bench_meaning.py`)"
+  },
+  {
+   "id": "decision:D04",
+   "type": "decision",
+   "name": "PyTorch is downloaded on first start, not bundled",
+   "why": "Keeps installers under 70 MB; picks the GPU build on NVIDIA PCs",
+   "revisit_when": "never, unless offline installs are needed"
+  },
+  {
+   "id": "decision:D05",
+   "type": "decision",
+   "name": "Intel Macs pinned to PyTorch 2.2.2 + NumPy 1.x, CPU only",
+   "why": "2.2.2 is the last Intel Mac build",
+   "revisit_when": "if Intel support is dropped"
+  },
+  {
+   "id": "decision:D06",
+   "type": "decision",
+   "name": "Intel .pkg built on Apple Silicon via Rosetta",
+   "why": "GitHub is retiring its Intel Mac machines",
+   "revisit_when": "if the Rosetta build breaks"
+  },
+  {
+   "id": "decision:D07",
+   "type": "decision",
+   "name": "The window is a local web page",
+   "why": "Works the same on Mac, Windows and inside OBS; no UI toolkit to install",
+   "revisit_when": "never"
+  },
+  {
+   "id": "decision:D08",
+   "type": "decision",
+   "name": "Google Docs two ways: Way 1 (default) a script in the doc, pasted Web app URL; Way 2 Sign in with Google (OAuth desktop + PKCE, scope drive.file) and the Docs API",
+   "why": "Way 1 needs no Google Cloud project and no test list, so anyone can do it; the window names the fix for every wrong paste or deployment setting (the old sidebar link broke with \"page not found\"). Way 2 makes a new doc per session but the Gmail must be on the test list",
+   "revisit_when": "if many users outside the test list want Way 2: publish the app"
+  },
+  {
+   "id": "decision:D09",
+   "type": "decision",
+   "name": "Not signed by Apple/Microsoft",
+   "why": "Signing costs money every year; the guide explains the one-time prompt",
+   "revisit_when": "if many users get stuck on the prompt"
+  },
+  {
+   "id": "evidence:E01",
+   "type": "evidence",
+   "name": "Apple Silicon .pkg installs and runs",
+   "how": "Installed on an M-series Mac, live OBS test",
+   "date": "Oct 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E02",
+   "type": "evidence",
+   "name": "Intel .pkg works",
+   "how": "Ran the packaged Intel Python under Rosetta: speech engine install, Hindi test clip, translation",
+   "date": "Oct 2026",
+   "confidence": "medium: **not yet on a real Intel Mac**"
+  },
+  {
+   "id": "evidence:E03",
+   "type": "evidence",
+   "name": "Windows installer builds",
+   "how": "GitHub Actions builds it on every release",
+   "date": "Oct 2026",
+   "confidence": "medium: **build checked, install not tested on a real PC by us**"
+  },
+  {
+   "id": "evidence:E04",
+   "type": "evidence",
+   "name": "Setup from source works",
+   "how": "Fresh `git clone`, `.venv`, `pip install`, `--test` on a Mac",
+   "date": "Oct 2026",
+   "confidence": "high (Mac), untested (Windows)"
+  },
+  {
+   "id": "evidence:E05",
+   "type": "evidence",
+   "name": "Mic off releases the microphone",
+   "how": "Log shows \"Microphone released\"; macOS mic dot goes off",
+   "date": "Oct 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E06",
+   "type": "evidence",
+   "name": "First-time download works from zero",
+   "how": "Empty data folder, plain HTTPS (Xet off): 0 → 100% for NLLB in ~90 s on a Mac",
+   "date": "Oct 31 2026",
+   "confidence": "high (Mac), **Windows not re-tested**"
+  },
+  {
+   "id": "evidence:E07",
+   "type": "evidence",
+   "name": "Blocked network fails clearly instead of hanging",
+   "how": "Pointed the download at an unreachable address: stops after ~100 s with \"huggingface.co can't be reached…\" + Try again (before: waited forever at 0%)",
+   "date": "Oct 31 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E08",
+   "type": "evidence",
+   "name": "Offline pack installs with no Hugging Face",
+   "how": "Fresh home folder, zips in Downloads, Hugging Face blocked: both models ready in 3 s, translation + Hindi transcription correct",
+   "date": "Oct 31 2026",
+   "confidence": "high (Mac)"
+  },
+  {
+   "id": "evidence:E09",
+   "type": "evidence",
+   "name": "GitHub fallback when Hugging Face fails",
+   "how": "Hugging Face blocked: NLLB installed from the real GitHub pack in 14 min, progress moving, no leftovers; a zip with a `../` path is rejected",
+   "date": "Oct 31 2026",
+   "confidence": "high (Mac)"
+  },
+  {
+   "id": "evidence:E10",
+   "type": "evidence",
+   "name": "Vocabulary terms survive translation",
+   "how": "`tests/test_vocabulary.py`",
+   "date": "each change",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E11",
+   "type": "evidence",
+   "name": "Caption styles fall back safely (late, too long, \"Here is\", dropped/added term, changed number, new ideas)",
+   "how": "`tests/test_meaning.py` with a fake model",
+   "date": "Nov 1 2026",
+   "confidence": "high"
+  },
+  {
+   "id": "evidence:E12",
+   "type": "evidence",
+   "name": "Caption styles: speed + quality",
+   "how": "`tests/bench_meaning.py`, 30 real lines, M4 Pro: Natural median 0.51 s, Simple 0.38 s; checks rejected 3 / 8 of 30 (shown word for word)",
+   "date": "Nov 1 2026",
+   "confidence": "high (M4 Pro), **untested on Intel Mac / Windows**"
+  },
+  {
+   "id": "evidence:E13",
+   "type": "evidence",
+   "name": "Style model downloads on first use",
+   "how": "Fresh data folder: `meaning` pack from GitHub in ~35 s, loads in 0.3 s; window shows downloading → ready",
+   "date": "Nov 1 2026",
+   "confidence": "high (Mac)"
+  },
+  {
+   "id": "release:v1.0.0",
+   "type": "release",
+   "name": "v1.0.0"
+  },
+  {
+   "id": "release:v1.0.1",
+   "type": "release",
+   "name": "v1.0.1"
+  },
+  {
+   "id": "release:v1.0.2",
+   "type": "release",
+   "name": "v1.0.2"
+  },
+  {
+   "id": "release:v1.0.3",
+   "type": "release",
+   "name": "v1.0.3"
+  },
+  {
+   "id": "release:v1.0.4",
+   "type": "release",
+   "name": "v1.0.4"
+  },
+  {
+   "id": "release:v1.0.5",
+   "type": "release",
+   "name": "v1.0.5"
+  },
+  {
+   "id": "release:v1.0.6",
+   "type": "release",
+   "name": "v1.0.6"
+  },
+  {
+   "id": "release:v1.0.7",
+   "type": "release",
+   "name": "v1.0.7"
+  },
+  {
+   "id": "release:v1.0.8",
+   "type": "release",
+   "name": "v1.0.8"
+  },
+  {
+   "id": "release:v1.0.9",
+   "type": "release",
+   "name": "v1.0.9"
+  },
+  {
+   "id": "release:v1.0.10",
+   "type": "release",
+   "name": "v1.0.10"
+  },
+  {
+   "id": "release:v1.1.0",
+   "type": "release",
+   "name": "v1.1.0"
+  }
+ ],
+ "edges": [
+  {
+   "source": "feature:overlay",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dock",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:obs-setup",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:speech",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:speech",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:speech",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:whisper-fallback",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:translation",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:translation",
+   "type": "must_respect",
+   "target": "constraint:C4",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:mic-control",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:google-docs",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:model-download",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:model-download",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:installers",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:installers",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:docs",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R01",
+   "type": "answered_by",
+   "target": "feature:overlay",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R01",
+   "type": "answered_by",
+   "target": "feature:dock",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R01",
+   "type": "answered_by",
+   "target": "feature:obs-setup",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R02",
+   "type": "answered_by",
+   "target": "feature:caption-modes",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R03",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R03",
+   "type": "answered_by",
+   "target": "feature:vocabulary",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R03",
+   "type": "answered_by",
+   "target": "feature:spelling-fixes",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R04",
+   "type": "answered_by",
+   "target": "feature:translation",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R04",
+   "type": "answered_by",
+   "target": "feature:vocabulary",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R04",
+   "type": "answered_by",
+   "target": "feature:blocked-words",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R05",
+   "type": "answered_by",
+   "target": "feature:whisper-fallback",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R06",
+   "type": "answered_by",
+   "target": "feature:mic-control",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R06",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R07",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R07",
+   "type": "answered_by",
+   "target": "feature:caption-modes",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R07",
+   "type": "answered_by",
+   "target": "feature:translation",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R08",
+   "type": "answered_by",
+   "target": "feature:hinglish",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R08",
+   "type": "answered_by",
+   "target": "feature:caption-modes",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R09",
+   "type": "answered_by",
+   "target": "feature:dock",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R09",
+   "type": "answered_by",
+   "target": "feature:obs-setup",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R10",
+   "type": "answered_by",
+   "target": "feature:dock",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R11",
+   "type": "answered_by",
+   "target": "feature:installers",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R11",
+   "type": "answered_by",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R12",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R13",
+   "type": "answered_by",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R14",
+   "type": "answered_by",
+   "target": "feature:mic-control",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R15",
+   "type": "answered_by",
+   "target": "feature:installers",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R15",
+   "type": "answered_by",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R16",
+   "type": "answered_by",
+   "target": "feature:docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R17",
+   "type": "answered_by",
+   "target": "feature:docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R18",
+   "type": "answered_by",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R19",
+   "type": "answered_by",
+   "target": "feature:installers",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R19",
+   "type": "answered_by",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R20",
+   "type": "answered_by",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R21",
+   "type": "answered_by",
+   "target": "feature:caption-styles",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:overlay",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/data/overlay.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:overlay",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dock",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/dock.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:dock",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:obs-setup",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/obs_setup.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:obs-setup",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:speech",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:speech",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:whisper-fallback",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:whisper-fallback",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:whisper-fallback",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/install_localvocal.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:translation",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:hinglish",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:hinglish",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-modes",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-modes",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/dock.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/dock.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:caption-styles",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:vocabulary",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:blocked-words",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:spelling-fixes",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:mic-control",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:mic-control",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:mic-control",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/dock.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:sessions",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:google-docs",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/gdocs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:google-docs",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/data/google-docs/LiveCaptions.gs",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:google-docs",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/dock.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:model-download",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:model-download",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:installers",
+   "type": "implemented_in",
+   "target": "file:installer/macos/build.sh",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:installers",
+   "type": "implemented_in",
+   "target": "file:installer/windows/build.ps1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:installers",
+   "type": "implemented_in",
+   "target": "file:.github/workflows/build.yml",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:docs",
+   "type": "implemented_in",
+   "target": "file:docs/SETUP_GUIDE.md",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:docs",
+   "type": "implemented_in",
+   "target": "file:AGENTS.md",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:docs",
+   "type": "implemented_in",
+   "target": "file:docs/ARCHITECTURE.md",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:docs",
+   "type": "implemented_in",
+   "target": "file:docs/GOOGLE_DOCS.md",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/__main__.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/gdocs.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/install_localvocal.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/install_localvocal.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/models.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/obs_bridge.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/obs_bridge.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/obs_setup.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/qwen_engine.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/gdocs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/captions",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/captions",
+   "type": "part_of",
+   "target": "feature:mic-control",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs",
+   "type": "part_of",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/oauth",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/oauth",
+   "type": "part_of",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/open",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/open",
+   "type": "part_of",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/script",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/gdocs/script",
+   "type": "part_of",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/mic",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/mic",
+   "type": "part_of",
+   "target": "feature:mic-control",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/mode",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/mode",
+   "type": "part_of",
+   "target": "feature:caption-modes",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/quit",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/session/new",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/session/new",
+   "type": "part_of",
+   "target": "feature:sessions",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/session/open",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/session/open",
+   "type": "part_of",
+   "target": "feature:sessions",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/setup/retry",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/setup/retry",
+   "type": "part_of",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/speech",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/speech",
+   "type": "part_of",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/style",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/style",
+   "type": "part_of",
+   "target": "feature:caption-styles",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/bench_meaning.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/bench_meaning.py",
+   "type": "checks",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/bench_meaning.py",
+   "type": "checks",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_gdocs_script.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/gdocs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_gdocs_script.py",
+   "type": "checks",
+   "target": "feature:google-docs",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_meaning.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_meaning.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_meaning.py",
+   "type": "checks",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_meaning.py",
+   "type": "checks",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_meaning.py",
+   "type": "checks",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_qwen_live.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_qwen_live.py",
+   "type": "checks",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_vocabulary.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_vocabulary.py",
+   "type": "checks",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D01",
+   "type": "about",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D02",
+   "type": "about",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D03",
+   "type": "about",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D03",
+   "type": "about",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D03",
+   "type": "about",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D04",
+   "type": "about",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D04",
+   "type": "about",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D05",
+   "type": "about",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D05",
+   "type": "about",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D06",
+   "type": "about",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D07",
+   "type": "about",
+   "target": "feature:dock",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D07",
+   "type": "about",
+   "target": "feature:obs-setup",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D07",
+   "type": "about",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D08",
+   "type": "about",
+   "target": "feature:dock",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D08",
+   "type": "about",
+   "target": "feature:sessions",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D08",
+   "type": "about",
+   "target": "feature:google-docs",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:mic-control",
+   "confidence": 0.6
+  },
+  {
+   "source": "decision:D09",
+   "type": "about",
+   "target": "feature:docs",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E01",
+   "type": "proves",
+   "target": "feature:obs-setup",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E01",
+   "type": "proves",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E02",
+   "type": "proves",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E02",
+   "type": "proves",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E02",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E02",
+   "type": "proves",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E03",
+   "type": "proves",
+   "target": "feature:dock",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E03",
+   "type": "proves",
+   "target": "feature:installers",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E04",
+   "type": "proves",
+   "target": "feature:docs",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E05",
+   "type": "proves",
+   "target": "feature:mic-control",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E06",
+   "type": "proves",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E06",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E07",
+   "type": "proves",
+   "target": "feature:blocked-words",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E07",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E08",
+   "type": "proves",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E08",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E08",
+   "type": "proves",
+   "target": "feature:blocked-words",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E08",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E09",
+   "type": "proves",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E09",
+   "type": "proves",
+   "target": "feature:blocked-words",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E09",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E10",
+   "type": "proves",
+   "target": "feature:translation",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E10",
+   "type": "proves",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E10",
+   "type": "proved_by",
+   "target": "test:tests/test_vocabulary.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "evidence:E11",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E11",
+   "type": "proves",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E11",
+   "type": "proves",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E11",
+   "type": "proved_by",
+   "target": "test:tests/test_meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "evidence:E12",
+   "type": "proves",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E12",
+   "type": "proved_by",
+   "target": "test:tests/bench_meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "evidence:E13",
+   "type": "proves",
+   "target": "feature:dock",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E13",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E13",
+   "type": "proves",
+   "target": "feature:caption-styles",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E13",
+   "type": "proves",
+   "target": "feature:model-download",
+   "confidence": 0.6
+  },
+  {
+   "source": "release:v1.0.1",
+   "type": "follows",
+   "target": "release:v1.0.0",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.2",
+   "type": "follows",
+   "target": "release:v1.0.1",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.3",
+   "type": "follows",
+   "target": "release:v1.0.2",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.4",
+   "type": "follows",
+   "target": "release:v1.0.3",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.5",
+   "type": "follows",
+   "target": "release:v1.0.4",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.6",
+   "type": "follows",
+   "target": "release:v1.0.5",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.7",
+   "type": "follows",
+   "target": "release:v1.0.6",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.8",
+   "type": "follows",
+   "target": "release:v1.0.7",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.9",
+   "type": "follows",
+   "target": "release:v1.0.8",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.0.10",
+   "type": "follows",
+   "target": "release:v1.0.9",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v1.1.0",
+   "type": "follows",
+   "target": "release:v1.0.10",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R21",
+   "type": "shipped_in",
+   "target": "release:v1.1.0",
+   "confidence": 1.0
+  }
+ ]
+}
