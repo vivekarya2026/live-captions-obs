@@ -58,6 +58,13 @@ jobs:
         with:
           version: 1.4.309.0
           cache: true
+      - name: SPIRV-Headers (ggml-vulkan needs its CMake package; the SDK above has no config file)
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch vulkan-sdk-1.4.309.0 https://github.com/KhronosGroup/SPIRV-Headers.git "$env:RUNNER_TEMP\spirv-src"
+          cmake -S "$env:RUNNER_TEMP\spirv-src" -B "$env:RUNNER_TEMP\spirv-build" -DCMAKE_INSTALL_PREFIX="$env:RUNNER_TEMP\spirv" -DSPIRV_HEADERS_ENABLE_TESTS=OFF
+          cmake --install "$env:RUNNER_TEMP\spirv-build"
+          "CMAKE_PREFIX_PATH=$env:RUNNER_TEMP\spirv" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Google sign-in client (from the GOOGLE_OAUTH_CLIENT secret)
         shell: bash
         env:
