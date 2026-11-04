@@ -1058,6 +1058,12 @@ async lcRequest(path: string) : Promise<EngineReply> {
 async lcSaveTerms(terms: CustomTerm[]) : Promise<EngineReply> {
     return await TAURI_INVOKE("lc_save_terms", { terms });
 },
+/**
+ * A JSON POST to the engine (song import and save). Only `ALLOWED_POST` routes.
+ */
+async lcPost(path: string, body: string) : Promise<EngineReply> {
+    return await TAURI_INVOKE("lc_post", { path, body });
+},
 async lcLinks() : Promise<EngineLinks> {
     return await TAURI_INVOKE("lc_links");
 },

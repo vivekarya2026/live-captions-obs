@@ -24,6 +24,9 @@
     transition: opacity .25s ease;
   }
   #cap.empty { opacity: 0; }
+  /* Song mode: lyric line, then its translation (smaller, lighter) */
+  #cap .tr { display: block; font-size: 0.8em; font-weight: 500; opacity: 0.85; margin-top: 0.15em; }
+  @media (prefers-reduced-motion: reduce) { #cap { transition: none; } }
 </style>
 </head>
 <body>
@@ -46,7 +49,15 @@
         if (text && !/[\p{L}\p{N}]/u.test(text)) text = last ?? '';
         if (text !== last) {
           last = text;
-          cap.textContent = text;
+          // Two lines (Song mode): the lyric, then its translation under it.
+          const [line, ...rest] = text.split('\n');
+          cap.textContent = line;
+          if (rest.join(' ').trim()) {
+            const tr = document.createElement('span');
+            tr.className = 'tr';
+            tr.textContent = rest.join(' ').trim();
+            cap.appendChild(tr);
+          }
           cap.classList.toggle('empty', !text);
         }
       }

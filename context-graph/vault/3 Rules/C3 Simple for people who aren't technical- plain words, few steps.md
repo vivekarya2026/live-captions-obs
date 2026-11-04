@@ -13,4 +13,5 @@ type: "constraint"
 - [[Installers]] (must respect)
 - [[Desktop app]] (must respect)
 - [[Custom words]] (must respect)
+- [[Song mode]] (must respect)
 - [[Guides]] (must respect)

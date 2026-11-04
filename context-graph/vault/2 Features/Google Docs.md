@@ -17,6 +17,7 @@ does: "Script web app (Way 1) or Sign in with Google (Way 2)"
 - [[R13 Write captions into Google Docs]] (answered by)
 - [[R19 DMG for Mac, easy Google Docs, option to remove time stamps]] (answered by)
 - [[R20 Google Docs setup that people who aren't technical can do]] (answered by)
+- [[R24 Upload song lyrics in any format (Hindi, English, Punjabi in Devanagar]] (answered by)
 - [[gdocs]] (part of)
 - [[gdocs-oauth]] (part of)
 - [[gdocs-open]] (part of)

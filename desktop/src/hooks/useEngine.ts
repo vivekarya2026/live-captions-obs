@@ -14,7 +14,22 @@ export interface EngineState {
   captions_on: boolean;
   caption: string;
   speech_model: string;
-  speech_models: Record<string, { label: string; ready: boolean }>;
+  speech_models: Record<
+    string,
+    { label: string; ready: boolean; size_gb?: number }
+  >;
+  speech_default?: string;
+  /** The speech model actually listening ("" while loading). */
+  speech_loaded?: string;
+  translation_model?: string;
+  translation_loaded?: string;
+  translation_loading?: boolean;
+  translation_status?: string;
+  translation_default?: string;
+  translation_models?: Record<
+    string,
+    { label: string; ready: boolean; size_gb?: number }
+  >;
   speech_status: string;
   speech_loading: boolean;
   engine: "qwen" | "whisper";
@@ -39,6 +54,33 @@ export interface EngineState {
   lines: number;
   obs: boolean;
   gdocs: GDocsState;
+  /** Song mode (docs/song-mode); missing on an older engine. */
+  songs?: SongModeState;
+}
+
+/** Song mode: off, listening, suggested, following or lost (song_mode.py). */
+export interface SongModeState {
+  on: boolean;
+  state: "off" | "listening" | "suggested" | "following" | "lost";
+  /** Songs in the library. */
+  count: number;
+  /** Seconds in this state. */
+  since: number;
+  /** What the speech model last heard (shown on the suggestion card). */
+  heard: string;
+  /** Best other songs for what was heard ("Pick the song"). */
+  guesses: { id: string; title: string }[];
+  song?: {
+    id: string;
+    title: string;
+    language: string;
+    lines: number;
+    line: number;
+    text: string;
+    translation: string;
+    next: string;
+    chorus: boolean;
+  };
 }
 
 export interface GDocsState {

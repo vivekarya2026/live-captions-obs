@@ -40,7 +40,8 @@ from pathlib import Path
 
 from . import models, obs_bridge, paths
 from .meaning import STYLES
-from .speech import NOISE_LEVELS, SPEECH_MODELS, Speech, input_devices, local_mic, save_local_mic
+from .translation import TRANSLATION_MODELS, Translation
+from .speech import DEFAULT_MODEL, NOISE_LEVELS, SPEECH_MODELS, Speech, input_devices, local_mic, save_local_mic
 
 HERE = paths.PACKAGE
 VOCAB_DIR = paths.VOCAB_DIR
@@ -63,13 +64,7 @@ QWEN_MODEL_FILE = DATA / "speech_model.txt"   # qwen-0.6b (default) or qwen-1.7b
 POLL_SECONDS = 0.05
 CLEAR_AFTER_SECONDS = 5  # speech captions disappear this long after the speaker stops
 FRAGMENT_JOIN_SECONDS = 2.5  # a half sentence is joined with speech that follows within this
-STANDALONE_IDLE_QUIT = 180   # without OBS: stop this long after the app window was closed
-
-
-def open_app_window() -> None:
-    """The app window (the same page as the OBS dock), in the default browser."""
-    import webbrowser
-    webbrowser.open(f"http://127.0.0.1:{CONTROL_PORT}/")
+STANDALONE_IDLE_QUIT = 180   # started by hand: stop this long after nothing (app, OBS dock) asked for state
 
 
 def is_fragment(text: str) -> bool:
@@ -577,18 +572,18 @@ class Vocabulary:
 # Translation model (Meta NLLB-200 1.3B, int8, via CTranslate2)
 # --------------------------------------------------------------------------
 class Translator:
-    def __init__(self) -> None:
+    def __init__(self, key: str = "nllb") -> None:
         import ctranslate2
         import sentencepiece as spm
 
         t0 = time.time()
-        model_dir = models.model_dir("nllb")
+        model_dir = models.model_dir(key)
         threads = max(2, min(6, (os.cpu_count() or 4) // 2))  # 6 was fastest next to OBS on an M4 Pro
         self.model = ctranslate2.Translator(str(model_dir), device="cpu", compute_type="int8",
                                             intra_threads=threads)
         self.sp = spm.SentencePieceProcessor(model_file=str(model_dir / "sentencepiece.bpe.model"))
         self.cache: dict[tuple, str] = {}
-        log.info("Translation model loaded in %.1fs", time.time() - t0)
+        log.info("Translation model %s loaded in %.1fs", key, time.time() - t0)
 
     def translate(self, text: str, src: str, tgt: str) -> str:
         # Translate sentence by sentence: NLLB tends to drop later sentences otherwise.
@@ -931,7 +926,7 @@ def log_transcript(source: str, original: str, caption: str) -> None:
 
 
 LANG_NAMES = {"en": "English", "hi": "Hindi", "hinglish": "Hinglish", "ur": "Hindi (Urdu script)",
-              "other": "Other"}
+              "other": "Other", "pa": "Punjabi", "song": "Song"}
 
 
 class SessionRecorder:
@@ -1047,6 +1042,7 @@ class App:
         self.speech = Speech(setup)
         self.with_obs = with_obs
         self.gdocs = None          # GoogleDocs link (set in run())
+        self.translation: Translation | None = None   # set in run()
         self.quit = False          # "Quit" in the app window
         self.last_client = time.time()  # last time the app window / OBS dock asked for state
         self.status = ""
@@ -1054,6 +1050,114 @@ class App:
         self._sync_again = False
         self._rewriter_loading = False
         self.pipeline_lock = threading.Lock()  # live captions and dictation share the pipeline
+        from .song_library import Library
+        from .song_mode import SongMode
+        self.songs = SongMode(Library())        # Song mode (docs/song-mode)
+        self.song_shown = 0                     # last lyric line written to the stream (SongMode.shown)
+        self.song_block = ""                    # song whose title is already in the document
+
+    # ---- Song mode ----------------------------------------------------------
+    def song_route(self, path: str, q: dict) -> dict:
+        sm, lib = self.songs, self.songs.library
+        ok = True
+        if path == "/songs":
+            return {"songs": lib.summary(), "song_mode": sm.view(self.pipeline.mode),
+                    "folder": str(lib.db.parent)}
+        if path == "/songs/song":
+            return {"song": lib.get(q.get("id", ""))}
+        if path == "/songs/mode":
+            sm.set_on(q.get("on") == "1")
+        elif path == "/songs/confirm":
+            ok = sm.confirm()
+        elif path == "/songs/reject":
+            ok = sm.reject()
+        elif path == "/songs/next":
+            ok = sm.step(1)
+        elif path == "/songs/back":
+            ok = sm.step(-1)
+        elif path == "/songs/stop":
+            ok = sm.stop()
+        elif path == "/songs/start":
+            ok = sm.start(q.get("id", ""), int(q.get("line") or 0))
+        elif path == "/songs/delete":
+            if sm.song is not None and sm.song.id == q.get("id") and sm.state in ("following", "lost"):
+                return {"ok": False, "error": "Stop the song first."}
+            ok = lib.delete(q.get("id", ""))
+        elif path == "/songs/open":
+            paths.open_folder(lib.db.parent)
+        elif path == "/songs/example":
+            from .song_import import write_example
+            paths.open_folder(write_example(lib.db.parent / "Example songs.xlsx").parent)
+        else:
+            return {"ok": False, "error": "unknown"}
+        self.show_song_now()
+        return {"ok": ok, "song_mode": sm.view(self.pipeline.mode)}
+
+    def song_post(self, path: str, body: dict) -> dict:
+        from . import song_import
+        lib = self.songs.library
+        if path == "/songs/import":   # read files or pasted text: nothing saved yet (Check page)
+            found, errors = [], []
+            for f in body.get("files") or []:
+                try:
+                    found += song_import.parse_file(Path(f))
+                except song_import.ReadError as e:
+                    errors.append(str(e))
+                except OSError as e:
+                    errors.append(f"Couldn't open {Path(f).name} ({e.strerror}).")
+            if body.get("text", "").strip():
+                try:
+                    found += song_import.parse_text(body["text"])
+                except song_import.ReadError as e:
+                    errors.append(str(e))
+            return {"ok": bool(found), "songs": found, "errors": errors}
+        saved = []                    # /songs/save: the checked songs
+        for f in body.get("files") or []:
+            try:
+                lib.keep_original(Path(f))
+            except OSError:
+                log.warning("Could not keep a copy of %s", f)
+        for song in body.get("songs") or []:
+            saved.append(lib.save(song))
+        return {"ok": True, "saved": len(saved), "ids": saved, "songs": lib.summary()}
+
+    def show_song_now(self) -> None:
+        """The operator tapped: put the lyric (or nothing) on the stream at once."""
+        lyric = self.songs.lyric(self.pipeline.mode)
+        if lyric:
+            self.song_output(lyric)
+        elif self.song_shown and self.songs.state != "following":
+            self.song_shown = 0
+            if self.songs.state != "lost":
+                self.song_block = ""       # the next song gets its own title in the document
+            write_atomic(OUTPUT, "")   # normal captions take over with the next sentence
+
+    def song_output(self, lyric: tuple[str, str]) -> None:
+        """A lyric line on the stream, and (once per line) in the session and document."""
+        sm = self.songs
+        if sm.shown == self.song_shown:
+            return
+        self.song_shown = sm.shown
+        text, tr = lyric
+        write_atomic(OUTPUT, f"{text}\n{tr}" if tr else text)
+        song = sm.song
+        if self.song_block != song.id:          # a song starts: its title, once (session files)
+            self.song_block = song.id
+            self.pipeline.recorder.add(self.pipeline.mode, "song", "song", f"♪ {song.title}", f"♪ {song.title}")
+        self.pipeline.recorder.add(self.pipeline.mode, "song", song.language, text, tr or text)
+        if self.gdocs is not None:
+            self.gdocs.add(dt.datetime.now().strftime("%H:%M:%S"), f"♪ {song.title}", text, tr or text)
+        log.info("(song) %s · line %d: %s  ->  %s", song.title, sm.line + 1, text, tr)
+
+    def song_speech_model(self) -> None:
+        """Gate 2: while a song is shown, use the 1.7B model if it's downloaded."""
+        from .song_mode import BIG_MODEL
+        sp = self.speech
+        if self.songs.wants_big_model():
+            if sp.model_key != BIG_MODEL and not sp.borrowed:
+                sp.borrow(BIG_MODEL)
+        elif sp.borrowed:
+            sp.borrow(None)
 
     def dictate(self, audio: "object") -> dict:
         """Push-to-talk from the desktop app: one recording (16 kHz mono float32)
@@ -1205,7 +1309,12 @@ class App:
             "model": (SPEECH_MODELS.get(sp.qwen.model_key, "Qwen3") if sp.engine == "qwen"
                       else "Whisper (until Qwen3 is ready)"),
             "speech_model": sp.model_key, "speech_status": sp.status, "speech_loading": sp.loading,
-            "speech_models": {k: {"label": v, "ready": models.model_ready(k)} for k, v in SPEECH_MODELS.items()},
+            "speech_models": {k: {"label": v, "ready": models.model_ready(k),
+                                  "size_gb": round(models.MODELS[k]["size"] / 1e9, 1)}
+                              for k, v in SPEECH_MODELS.items()},
+            "speech_default": DEFAULT_MODEL,
+            "speech_loaded": sp.qwen.model_key if sp.engine == "qwen" else "",
+            **(self.translation.state() if self.translation else {}),
             "setup": self.setup.status(),
             "translator_ready": p.translator is not None,
             "captions_on": captions_on(),
@@ -1222,6 +1331,7 @@ class App:
             "session": str(p.recorder.dir or ""), "sessions_root": str(SESSIONS_DIR),
             "lines": p.recorder.count,
             "caption": OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else "",
+            "songs": self.songs.view(p.mode),
         }
 
 
@@ -1298,6 +1408,18 @@ def start_control_server(app: App) -> bool:
                 if q.get("model") in SPEECH_MODELS:
                     app.speech.choose_model(q["model"], on_started=app.sync)
                 return self._json(app.state())
+            if url.path == "/translation":
+                if app.translation and q.get("model") in TRANSLATION_MODELS:
+                    app.translation.choose(q["model"])
+                return self._json(app.state())
+            if url.path == "/models/delete":
+                key = q.get("key", "")
+                in_use = {app.speech.model_key, (app.speech.qwen.model_key if app.speech.qwen else "")}
+                if app.translation:
+                    in_use |= {app.translation.model_key, app.translation.loaded_key}
+                why = models.delete(key, in_use) if key in SPEECH_MODELS or key in TRANSLATION_MODELS \
+                    else "unknown model"
+                return self._json({**app.state(), "delete_error": why})
             if url.path == "/style":
                 if q.get("set") in STYLES and q["set"] != p.style:
                     app.set_style(q["set"])
@@ -1345,6 +1467,8 @@ def start_control_server(app: App) -> bool:
             if url.path == "/terms/open":
                 paths.open_folder(VOCAB_DIR)
                 return self._json({"ok": True})
+            if url.path.startswith("/songs"):
+                return self._json(app.song_route(url.path, q))
             if url.path == "/quit":
                 app.quit = True
                 return self._json({"ok": True})
@@ -1387,6 +1511,11 @@ def start_control_server(app: App) -> bool:
                     return self._json({"ok": True, "terms": clean})
                 except ValueError as e:
                     return self._json({"ok": False, "error": str(e)})
+            if url.path in ("/songs/import", "/songs/save"):
+                try:
+                    return self._json(app.song_post(url.path, json.loads(body or b"{}")))
+                except ValueError as e:
+                    return self._json({"ok": False, "error": str(e)})
             self._send(404, b"not found", "text/plain")
 
     try:
@@ -1426,34 +1555,31 @@ def _process_alive(pid: int) -> bool:
         return True
 
 
-def run(with_obs: bool = False, open_window: bool = False, parent_pid: int = 0) -> None:
+def run(with_obs: bool = False, parent_pid: int = 0) -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     install_overlay()
     setup = models.Setup()
-    pipeline = CaptionPipeline(Translator() if models.model_ready("nllb") else None)
+    pipeline = CaptionPipeline(None)
+    translation = Translation(setup, pipeline, Translator)
+    translation.start()                              # chosen NLLB (or the default) if downloaded
     app = App(pipeline, setup, with_obs=with_obs)
+    app.translation = translation
     if not start_control_server(app):
-        if open_window:  # already running (e.g. started by OBS): just show its window
-            open_app_window()
-        return
+        return  # already running (e.g. started by OBS): the app uses that one
     paths.PID_FILE.write_text(str(os.getpid()))
     from .gdocs import GoogleDocs
     app.gdocs = GoogleDocs()
     if not with_obs:
         from . import obs_setup
         obs_setup.finish_pending()  # the installer ran while OBS was open
-    if open_window:
-        open_app_window()
 
-    def nllb_ready():
-        pipeline.translator = Translator()
-
-    setup.when_ready("nllb", nllb_ready)
+    for key in TRANSLATION_MODELS:
+        setup.when_ready(key, lambda k=key: translation.on_downloaded(k))
     setup.when_ready("meaning", app.load_rewriter)
     setup.when_ready("runtime", lambda: app.speech.start_qwen_if_ready(app.sync))
     for key in SPEECH_MODELS:
-        setup.when_ready(key, lambda: app.speech.start_qwen_if_ready(app.sync))
+        setup.when_ready(key, lambda k=key: app.speech.on_model_downloaded(k, app.sync))
     setup.start()                                    # downloads whatever is missing
     app.speech.start_qwen_if_ready(app.sync)         # already downloaded: start now
     app.sync()                                       # LocalVocal on/off + language
@@ -1484,6 +1610,15 @@ def run(with_obs: bool = False, open_window: bool = False, parent_pid: int = 0) 
     def show(raw: str, source: str, final: bool, display: bool = True) -> None:
         nonlocal last_caption_time
         t0 = time.time()
+        if source == "speech":
+            app.songs.hear(raw, final)
+            lyric = app.songs.lyric(pipeline.mode)
+            if lyric:                    # Song mode: the lyric replaces the caption (Q1)
+                app.song_output(lyric)
+                last_caption_time = time.time()
+                return
+            if app.song_shown:           # the song ended or was lost: back to normal captions
+                app.song_shown = 0
         with app.pipeline_lock:
             caption = pipeline.process(raw, source)
             info = dict(pipeline.last)
@@ -1524,15 +1659,26 @@ def run(with_obs: bool = False, open_window: bool = False, parent_pid: int = 0) 
                 break
         elif (not alive and not app.gdocs.active() and now - app.last_client > STANDALONE_IDLE_QUIT
               and now - started > STANDALONE_IDLE_QUIT):
-            # Window closed, no OBS, no Google Doc: don't keep listening to the mic unseen.
-            log.info("Live Captions window closed: stopping")
+            # Nobody watching (no app, no OBS, no Google Doc): don't keep listening to the mic unseen.
+            log.info("Nothing is using Live Captions: stopping")
             break
         mode = read_mode()  # also allows switching with --mode
         if mode != pipeline.mode:
             app.set_mode(mode)
         if last_caption_time and now - last_caption_time > CLEAR_AFTER_SECONDS:
-            write_atomic(OUTPUT, "")  # don't leave the last words on screen
-            last_caption_time = 0.0
+            if app.songs.state == "following":
+                last_caption_time = now   # a lyric stays until the next line (the singer holds a note)
+            else:
+                write_atomic(OUTPUT, "")  # don't leave the last words on screen
+                last_caption_time = 0.0
+        app.songs.tick()
+        if app.song_shown and app.songs.state != "following":
+            app.show_song_now()           # the song ended or was lost: clear the lyric
+        elif app.songs.state == "following":
+            lyric = app.songs.lyric(pipeline.mode)
+            if lyric:
+                app.song_output(lyric)
+        app.song_speech_model()
         # Started before the OBS script was ready: sync again once it is.
         if (app.status.startswith(("no OBS", "OBS did not respond", "could not", "no Mic"))
                 and now - last_sync_try > 3):
@@ -1660,10 +1806,8 @@ def main(argv=None) -> None:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--with-obs", action="store_true",
                     help="started by the OBS script: stop when OBS closes")
-    ap.add_argument("--no-window", action="store_true", help="don't open the app window")
     ap.add_argument("--desktop", type=int, default=0, metavar="PID",
-                    help="started by the Live Captions desktop app (process PID): no browser window, "
-                         "stop when that app closes")
+                    help="started by the Live Captions desktop app (process PID): stop when that app closes")
     ap.add_argument("--console", action="store_true", help="log to the terminal instead of translator.log")
     ap.add_argument("--test", action="store_true", help="translate sample sentences and exit")
     ap.add_argument("--test-modes", action="store_true", help="translate samples in every caption mode and exit")
@@ -1697,8 +1841,7 @@ def main(argv=None) -> None:
         self_test_modes()
     else:
         try:
-            run(with_obs=args.with_obs, open_window=not args.with_obs and not args.no_window and not args.desktop,
-                parent_pid=args.desktop)
+            run(with_obs=args.with_obs, parent_pid=args.desktop)
         except Exception:
             log.exception("Translator crashed")
             raise

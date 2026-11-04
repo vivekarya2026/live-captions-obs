@@ -818,6 +818,7 @@ pub fn run(cli_args: CliArgs) {
             notices::dismiss_overlay_notice,
             live_captions::lc_request,
             live_captions::lc_save_terms,
+            live_captions::lc_post,
             live_captions::lc_links,
             shortcut::change_speech_engine_setting,
         ])
@@ -958,6 +959,10 @@ pub fn run(cli_args: CliArgs) {
             );
             system_languages::log_system_languages();
 
+            // Dev runs are a bare binary with no bundle icon, so the Dock
+            // would show a generic "exec" tile. Set the app icon at runtime.
+            #[cfg(target_os = "macos")]
+            utils::set_dock_icon();
             specta_builder.mount_events(app);
 
             // Headless one-shot path (`--transcribe-file` / `--list-devices` /

@@ -5,19 +5,10 @@
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
-; Desktop=1: the desktop app (live-captions.exe + resources\) next to python\ and app\
-#ifndef Desktop
-  #define Desktop "0"
-#endif
-#if Desktop == "1"
-  #define LaunchExe "{app}\live-captions.exe"
-  #define LaunchArgs ""
-  #define LaunchDir "{app}"
-#else
-  #define LaunchExe "{app}\python\pythonw.exe"
-  #define LaunchArgs "-m livecaptions"
-  #define LaunchDir "{app}\app"
-#endif
+; The desktop app (live-captions.exe + resources\) sits next to python\ and app\
+#define LaunchExe "{app}\live-captions.exe"
+#define LaunchArgs ""
+#define LaunchDir "{app}"
 
 [Setup]
 AppId={{6C1E2F4A-6F2B-4E7B-9C1D-7A51C0B2D3E4}
@@ -52,9 +43,7 @@ Source: "{#BuildDir}\python\*"; DestDir: "{app}\python"; Flags: recursesubdirs i
 Source: "{#BuildDir}\app\*"; DestDir: "{app}\app"; Flags: recursesubdirs ignoreversion
 Source: "{#BuildDir}\obs\*"; DestDir: "{app}\obs"; Flags: recursesubdirs ignoreversion
 Source: "{#BuildDir}\LICENSE.txt"; DestDir: "{app}"
-#if Desktop == "1"
 Source: "{#BuildDir}\desktop\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
-#endif
 
 [Icons]
 Name: "{userprograms}\Live Captions"; Filename: "{#LaunchExe}"; Parameters: "{#LaunchArgs}"; WorkingDir: "{#LaunchDir}"; Comment: "Live captions, translation and dictation"

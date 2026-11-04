@@ -73,6 +73,7 @@ class Speech:
         self.context = ""
         self.noise = "medium"
         self.enabled = True
+        self.borrowed = ""   # Song mode is using this model for now (not saved)
 
     @property
     def engine(self) -> str:
@@ -144,6 +145,7 @@ class Speech:
             return "unknown model"
         obs_bridge.write_atomic(MODEL_FILE, key)
         self.model_key = key
+        self.borrowed = ""
         if not self.qwen_possible(key):
             self.setup.start(want=key)
             return "downloading"
@@ -167,6 +169,38 @@ class Speech:
             return "loading"
         self.start_qwen_if_ready(on_started)
         return "loading"
+
+    def borrow(self, key: str | None) -> None:
+        """Song mode: use `key` for now without changing the saved choice;
+        None = back to the chosen model. Captions keep running while it loads."""
+        if self.qwen is None or self.qwen.model is None or self.loading:
+            return
+        target = key or self.model_key
+        if key and not self.qwen_possible(key):
+            return
+        self.borrowed = key or ""
+        if self.qwen.model_key == target:
+            return
+        self.loading = True
+
+        def work():
+            try:
+                self.qwen.load(target)
+                log.info("Speech model for songs: %s", target)
+            except Exception:
+                log.exception("Could not load %s", target)
+                self.borrowed = ""
+            finally:
+                self.loading = False
+        threading.Thread(target=work, daemon=True).start()
+
+    def on_model_downloaded(self, key: str, on_started=None) -> None:
+        """A speech model finished downloading: start captioning, or switch to
+        it if the user picked it while another one was already running."""
+        if self.engine == "qwen" and key == self.model_key and self.qwen.model_key != key:
+            self.choose_model(key, on_started)
+        else:
+            self.start_qwen_if_ready(on_started)
 
     # ---- LocalVocal (Whisper) in OBS ---------------------------------------
     def localvocal_settings(self) -> dict:

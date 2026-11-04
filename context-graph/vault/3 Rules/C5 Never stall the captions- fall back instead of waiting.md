@@ -10,3 +10,4 @@ type: "constraint"
 - [[Whisper fallback]] (must respect)
 - [[Caption style]] (must respect)
 - [[Dictation]] (must respect)
+- [[Song mode]] (must respect)

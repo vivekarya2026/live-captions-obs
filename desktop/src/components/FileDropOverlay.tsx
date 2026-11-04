@@ -7,16 +7,20 @@ import { transcribeFiles } from "./settings/history/transcribeFiles";
 interface FileDropOverlayProps {
   // Called as files are dropped, to show them in History.
   onDropped: () => void;
+  // The Songs page takes dropped files itself (lyrics, not recordings).
+  disabled?: boolean;
 }
 
 // Files dropped anywhere on the window are transcribed into History.
 export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
   onDropped,
+  disabled = false,
 }) => {
   const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
+    if (disabled) return;
     const unlisten = getCurrentWebview().onDragDropEvent(async (event) => {
       const { payload } = event;
       if (payload.type === "enter") {
@@ -34,9 +38,9 @@ export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
     return () => {
       unlisten.then((fn) => fn());
     };
-  }, [onDropped]);
+  }, [onDropped, disabled]);
 
-  if (!dragging) return null;
+  if (!dragging || disabled) return null;
 
   return (
     <div className="fixed inset-0 z-50 p-3 bg-background/85 pointer-events-none">

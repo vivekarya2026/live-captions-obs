@@ -25,7 +25,11 @@ import {
   clearOnboardingProgress,
   type OnboardingStep as OnboardingPreviewStep,
 } from "./components/onboarding/onboardingStore";
-import { DebugSettings, ModelsSettings } from "./components/settings";
+import {
+  DebugSettings,
+  LiveCaptionsSettings,
+  ModelsSettings,
+} from "./components/settings";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FileDropOverlay } from "./components/FileDropOverlay";
 import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
@@ -57,6 +61,14 @@ const renderSettingsContent = (
       <ModelsSettings onChangeLanguages={() => onSectionChange("general")} />
     );
   }
+  if (section === "live") {
+    return (
+      <LiveCaptionsSettings
+        onOpenModels={() => onSectionChange("models")}
+        onOpenSongs={() => onSectionChange("songs")}
+      />
+    );
+  }
   if (section === "debug") {
     return (
       <DebugSettings
@@ -82,8 +94,7 @@ function App() {
   // Set when a returning user's selected model is a retired (ONNX) model that
   // is still on disk: they must update it before the app can transcribe.
   const [migrationModelId, setMigrationModelId] = useState<string | null>(null);
-  const [currentSection, setCurrentSection] =
-    useState<SidebarSection>("live");
+  const [currentSection, setCurrentSection] = useState<SidebarSection>("live");
   const showHistory = useCallback(() => setCurrentSection("history"), []);
   const { settings, updateSetting } = useSettings();
   const direction = getLanguageDirection(i18n.language);
@@ -350,8 +361,15 @@ function App() {
           </div>
         </div>
         {/* Fixed footer at bottom */}
-        <Footer onShowHistory={showHistory} />
-        <FileDropOverlay onDropped={showHistory} />
+        <Footer
+          onShowHistory={showHistory}
+          onShowModels={() => setCurrentSection("models")}
+          onShowLive={() => setCurrentSection("live")}
+        />
+        <FileDropOverlay
+          onDropped={showHistory}
+          disabled={currentSection === "songs"}
+        />
       </div>
     );
   }

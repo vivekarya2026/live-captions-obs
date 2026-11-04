@@ -10,3 +10,4 @@ type: "constraint"
 - [[Model download]] (must respect)
 - [[Installers]] (must respect)
 - [[Desktop app]] (must respect)
+- [[Song mode]] (must respect)

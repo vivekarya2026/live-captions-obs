@@ -146,6 +146,9 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 - **Vocabulary** words: edit `app/livecaptions/data/vocabulary/Vocabulary_for_Live_Translations.xlsx`
   (or `hindi_terms.csv`), not the code. Changes apply live.
 - After any change run `--test` and `tests/test_vocabulary.py`. Both must pass.
+- **Song mode** (`song_*.py`, overlay, `components/songs/`): run `cd app && ../.venv/bin/python ../tests/test_songs.py`
+  (must end `ALL SONG CHECKS PASS`, ~1 s). With audio through the speech model: add `--audio qwen-1.7b` (~1 min).
+  Design and the approved decisions: `docs/song-mode/`.
 - **Caption styles** (Natural / Simple, `meaning.py`): after changing it run `../.venv/bin/python ../tests/test_meaning.py`
   (must end `ALL STYLE CHECKS PASS`, no download needed). Real-model smoke test: choose **Natural** in the
   window (or `curl -s "http://127.0.0.1:8765/style?set=natural"`), wait until the note says *Ready*, say
@@ -154,8 +157,8 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
 - **Desktop app** (`desktop/`, Handy fork): after a change run `cd desktop && npx tsc --noEmit && bun run lint`
   and `cd src-tauri && cargo test --lib`. New UI text goes in `src/i18n/locales/en/translation.json`
   (the other 25 languages fall back to English). Never bring back Handy's name, logo or links, except the
-  credit in About and `THIRD_PARTY.md`. Engine routes it uses: `/state`, `/dictate`, `/terms` — change them
-  in `translator.py` and `live_captions.rs` together.
+  credit in About and `THIRD_PARTY.md`. Engine routes it uses: `/state`, `/dictate`, `/terms`, `/songs…` — change them
+  in `translator.py` and `live_captions.rs` (`ALLOWED`, `ALLOWED_POST`) together.
 - Keep it working on **all three**: Mac Apple Silicon, Mac Intel (PyTorch 2.2.2, NumPy < 2, CPU only)
   and Windows. Use `paths.py` for every folder; never hard-code a path.
 - Never commit models, `.venv`, `build/`, `dist/` (see `.gitignore`).

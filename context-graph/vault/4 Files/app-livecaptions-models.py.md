@@ -1,7 +1,7 @@
 ---
 id: file:app/livecaptions/models.py
 type: "file"
-lines: 335
+lines: 358
 summary: "First-run setup: downloads the speech and translation models (and the"
 ---
 # app/livecaptions/models.py
@@ -18,4 +18,5 @@ summary: "First-run setup: downloads the speech and translation models (and the"
 - [[app-livecaptions-obs_bridge.py]] (uses)
 - [[app-livecaptions-qwen_engine.py]] (uses)
 - [[app-livecaptions-speech.py]] (uses)
+- [[app-livecaptions-translation.py]] (uses)
 - [[app-livecaptions-translator.py]] (uses)

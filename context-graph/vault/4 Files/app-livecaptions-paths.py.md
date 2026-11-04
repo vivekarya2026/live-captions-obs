@@ -15,5 +15,8 @@ summary: "Where Live Captions keeps its files, on macOS and Windows."
 - [[app-livecaptions-models.py]] (uses)
 - [[app-livecaptions-obs_bridge.py]] (uses)
 - [[app-livecaptions-obs_setup.py]] (uses)
+- [[app-livecaptions-song_library.py]] (uses)
+- [[app-livecaptions-song_mode.py]] (uses)
 - [[app-livecaptions-speech.py]] (uses)
+- [[app-livecaptions-translation.py]] (uses)
 - [[app-livecaptions-translator.py]] (uses)

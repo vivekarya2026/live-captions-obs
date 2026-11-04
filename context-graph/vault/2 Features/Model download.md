@@ -17,6 +17,7 @@ does: "First-run download with progress, GitHub fallback, offline packs"
 - [[R11 An installable package for any computer, OS and OBS]] (answered by)
 - [[R15 Intel Mac support]] (answered by)
 - [[R18 Fix the first download stuck at 0%]] (answered by)
+- [[R23 Choose the transcription and translation models- download, load and de]] (answered by)
 - [[setup-retry]] (part of)
 - [[tests-test_meaning.py]] (checks)
 - [[D04 PyTorch is downloaded on first start, not bundled]] (about)

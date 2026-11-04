@@ -1,6 +1,7 @@
 import React from "react";
 
-/** The Live Captions mark: a speech bubble with two caption lines. */
+/** The Live Captions mark: a sound wave turning into caption lines, on a
+ *  Royal Blue tile (same drawing as the app icon, design/icon/app.svg). */
 export const AppMark: React.FC<{
   size?: number;
   className?: string;
@@ -15,19 +16,11 @@ export const AppMark: React.FC<{
     className={className}
     aria-hidden
   >
-    <path
-      d="M6 5h20a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H14l-6 5v-5H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3Z"
-      fill="var(--color-logo-primary)"
-      stroke="var(--color-mascot-line)"
-      strokeWidth="2"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M9 12h14M9 16.5h9"
-      stroke="var(--color-mascot-line)"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
+    <rect width="32" height="32" rx="7.5" fill="var(--color-background-ui)" />
+    <g stroke="#fff" strokeWidth="2.6" strokeLinecap="round">
+      <path d="M6 14v4M10 10.5v11M14 12.5v7" />
+      <path d="M18.5 12h7.5M18.5 16h6.3M18.5 20h3.8" />
+    </g>
   </svg>
 );
 

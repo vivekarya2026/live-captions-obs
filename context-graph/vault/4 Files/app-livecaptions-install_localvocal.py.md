@@ -9,8 +9,8 @@ summary: "Installs the LocalVocal OBS plugin (Whisper speech recognition inside 
 **summary:** Installs the LocalVocal OBS plugin (Whisper speech recognition inside OBS),
 
 ## Links
-- uses [[app-livecaptions-paths.py]]
 - uses [[app-livecaptions-models.py]]
+- uses [[app-livecaptions-paths.py]]
 
 ## Linked from
 - [[Whisper fallback]] (built in)

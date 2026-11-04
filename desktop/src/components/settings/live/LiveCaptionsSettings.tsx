@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { NowSinging } from "../../songs/NowSinging";
 import { SettingsGroup } from "../../ui/SettingsGroup";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { Switch } from "../../ui/Switch";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { Dropdown } from "../../ui/Dropdown";
-import { useSettings } from "../../../hooks/useSettings";
+import { SpeechModelSummary } from "../../speech/SpeechModels";
 import {
   engineGet,
   useEngine,
@@ -87,10 +88,12 @@ export const EngineBanner: React.FC<{ error: string | null }> = ({ error }) => {
   );
 };
 
-export const LiveCaptionsSettings: React.FC = () => {
+export const LiveCaptionsSettings: React.FC<{
+  onOpenModels?: () => void;
+  onOpenSongs?: () => void;
+}> = ({ onOpenModels, onOpenSongs }) => {
   const { t } = useTranslation();
-  const { state: d, error, send } = useEngine(1000);
-  const { getSetting, updateSetting } = useSettings();
+  const { state: d, error, send, refresh } = useEngine(1000);
   const [volume, setVolume] = useState<number | null>(null);
   const volTimer = useRef<number | null>(null);
 
@@ -116,7 +119,6 @@ export const LiveCaptionsSettings: React.FC = () => {
   const folder = d.session.startsWith(root)
     ? d.session.slice(root.length).replace(/^[\\/]/, "")
     : d.session;
-  const engine = getSetting("speech_engine") ?? "live_captions";
 
   return (
     <div className="max-w-3xl w-full mx-auto space-y-6">
@@ -151,7 +153,7 @@ export const LiveCaptionsSettings: React.FC = () => {
         </div>
         <div className="px-4 py-3">
           <p className="text-xs text-ink-3 mb-1">{t("live.nowOnScreen")}</p>
-          <p className="text-lg font-medium min-h-7 break-words">
+          <p className="text-lg font-medium min-h-7 break-words whitespace-pre-line">
             {d.caption || (
               <span className="text-ink-3 text-sm font-normal">
                 {t("live.clear")}
@@ -159,6 +161,7 @@ export const LiveCaptionsSettings: React.FC = () => {
             )}
           </p>
         </div>
+        <NowSinging s={d.songs} onOpenSongs={onOpenSongs} onChanged={refresh} />
       </SettingsGroup>
 
       {/* Language and caption style */}
@@ -205,40 +208,14 @@ export const LiveCaptionsSettings: React.FC = () => {
         </SettingContainer>
       </SettingsGroup>
 
-      {/* Speech */}
+      {/* Speech: which model listens. Chosen on the Models page. */}
       <SettingsGroup title={t("live.speech.title")}>
         <SettingContainer
           title={t("live.speech.model")}
           description={t("live.speech.modelDescription")}
           grouped
         >
-          <Dropdown
-            selectedValue={d.speech_model}
-            onSelect={(v) => send(`/speech?model=${v}`)}
-            disabled={busy || d.speech_loading}
-            options={Object.entries(d.speech_models).map(([value, m]) => ({
-              value,
-              label: m.ready
-                ? m.label
-                : `${m.label} · ${t("live.speech.download")}`,
-            }))}
-          />
-        </SettingContainer>
-        <SettingContainer
-          title={t("live.speech.dictation")}
-          description={t("live.speech.dictationDescription")}
-          grouped
-        >
-          <Dropdown
-            selectedValue={engine}
-            onSelect={(v) =>
-              updateSetting("speech_engine", v as "live_captions" | "built_in")
-            }
-            options={[
-              { value: "live_captions", label: t("live.speech.engineLive") },
-              { value: "built_in", label: t("live.speech.engineBuiltIn") },
-            ]}
-          />
+          <SpeechModelSummary d={d} onOpen={() => onOpenModels?.()} />
         </SettingContainer>
         {(d.setup.running || d.setup.error) && (
           <div className="px-4 py-3 space-y-2">

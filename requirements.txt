@@ -8,3 +8,4 @@ numpy>=1.26
 certifi
 sounddevice>=0.4
 tokenizers>=0.22,<0.23       # caption styles (meaning.py); the range transformers (Qwen3-ASR) accepts
+pypdf>=5.0                   # Song mode: reading lyrics from PDF files (pure Python)

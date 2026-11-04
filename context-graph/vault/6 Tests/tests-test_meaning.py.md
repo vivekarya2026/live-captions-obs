@@ -8,8 +8,8 @@ summary: "Caption styles (meaning.py): every fallback rule, with a fake model (n
 **summary:** Caption styles (meaning.py): every fallback rule, with a fake model (no download).
 
 ## Links
-- tests [[app-livecaptions-meaning.py]]
 - tests [[app-livecaptions-translator.py]]
+- tests [[app-livecaptions-meaning.py]]
 - checks [[Caption language]] *(keyword match)*
 - checks [[Caption style]] *(keyword match)*
 - checks [[Model download]] *(keyword match)*

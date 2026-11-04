@@ -17,3 +17,4 @@ summary: "Qwen3-ASR speech recognition: listens to the microphone itself (so it 
 - [[Dictation]] (built in)
 - [[app-livecaptions-speech.py]] (uses)
 - [[tests-test_qwen_live.py]] (tests)
+- [[tests-test_songs.py]] (tests)

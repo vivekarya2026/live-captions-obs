@@ -38,6 +38,29 @@ pub fn measure_title_bar(window: &tauri::WebviewWindow) -> f64 {
     (ns_window.frame().size.height - ns_window.contentLayoutRect().size.height).max(0.0)
 }
 
+/// The Live Captions icon in the Dock, from the PNG compiled into the binary.
+/// A bundled .app already gets it from icon.icns; dev builds need this. Call
+/// on the main thread (Tauri's setup hook).
+#[cfg(target_os = "macos")]
+pub fn set_dock_icon() {
+    use objc2::AllocAnyThread;
+    use objc2_app_kit::{NSApplication, NSImage};
+    use objc2_foundation::{MainThreadMarker, NSData};
+
+    static ICON: &[u8] = include_bytes!("../icons/icon.png");
+    let Some(mtm) = MainThreadMarker::new() else {
+        log::warn!("set_dock_icon: not on the main thread");
+        return;
+    };
+    let data = NSData::with_bytes(ICON);
+    let Some(image) = NSImage::initWithData(NSImage::alloc(), &data) else {
+        log::warn!("set_dock_icon: could not decode the icon");
+        return;
+    };
+    // SAFETY: on the main thread, with a valid NSImage.
+    unsafe { NSApplication::sharedApplication(mtm).setApplicationIconImage(Some(&image)) };
+}
+
 #[cfg(any(test, all(target_os = "windows", target_arch = "x86_64")))]
 const IMAGE_FILE_MACHINE_ARM64: u16 = 0xaa64;
 

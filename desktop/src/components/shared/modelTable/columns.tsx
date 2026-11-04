@@ -22,7 +22,9 @@ export const isDense = (langs: string[]) =>
 
 /** The grade, speed and size columns: the same grid in heads and rows. */
 export const columnsClass = (langs: string[]) =>
-  gradeMode(langs) === "overall"
+  langs.length === 0
+    ? "grid-cols-[40px_52px] gap-x-[6px]" // speed and size only
+    : gradeMode(langs) === "overall"
     ? "grid-cols-[44px_40px_52px] gap-x-[6px]"
     : isDense(langs)
       ? "grid-cols-[repeat(var(--n),26px)_36px_50px] gap-x-[3px]"

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Cog, FlaskConical, History, Info, Sparkles, Cpu, Captions, BookA, Keyboard } from "lucide-react";
+import { Cog, FlaskConical, History, Info, Sparkles, Cpu, Captions, BookA, Keyboard, Music } from "lucide-react";
 import { AppTextLogo } from "./icons/AppTextLogo";
 import { useSettings } from "../hooks/useSettings";
 import {
@@ -13,6 +13,7 @@ import {
   LiveCaptionsSettings,
   VocabularySettings,
 } from "./settings";
+import { SongsSettings } from "./songs/SongsSettings";
 
 export type SidebarSection = keyof typeof SECTIONS_CONFIG;
 
@@ -49,6 +50,12 @@ export const SECTIONS_CONFIG = {
     labelKey: "sidebar.vocabulary",
     icon: BookA,
     component: VocabularySettings,
+    enabled: () => true,
+  },
+  songs: {
+    labelKey: "sidebar.songs",
+    icon: Music,
+    component: SongsSettings,
     enabled: () => true,
   },
   history: {

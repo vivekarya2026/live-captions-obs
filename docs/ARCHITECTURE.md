@@ -66,6 +66,8 @@ flowchart TD
     translator --> gdocs[gdocs.py<br/>Google Docs sender]
     translator --> obs_setup[obs_setup.py<br/>adds the script to OBS]
     translator --> models
+    translator --> translation[translation.py<br/>picks the NLLB size]
+    translation --> models
     translator --> meaning[meaning.py<br/>caption styles]
     meaning --> models    translator --> obs_bridge
     speech[speech.py<br/>picks the speech engine] --> qwen[qwen_engine.py<br/>mic + Qwen3-ASR]
@@ -82,13 +84,16 @@ flowchart TD
 
 | File | Job | Change it when… |
 |---|---|---|
-| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/mic`, `/captions`, `/gdocs`, `/terms`, `/quit`…) and, for the desktop app, `POST /dictate` (one recording → text) and `POST /terms` (custom words → `custom_terms.csv`). POSTs from a web page (`Origin` / `Sec-Fetch-Site` set) are refused. `--desktop PID` = started by the desktop app: no window, quit when that PID ends | the cleanup, translation, or window behaviour changes |
+| `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/speech?model=`, `/translation?model=`, `/models/delete?key=`, `/mic`, `/captions`, `/gdocs`, `/terms`, `/quit`…) and, for the desktop app, `POST /dictate` (one recording → text) and `POST /terms` (custom words → `custom_terms.csv`). POSTs from a web page (`Origin` / `Sec-Fetch-Site` set) are refused. `--desktop PID` = started by the desktop app: no window, quit when that PID ends | the cleanup, translation, or window behaviour changes |
 | `meaning.py` | Caption styles *Natural* / *Simple*: prompts, the rewrite with a time limit, and the safety checks that fall back to word for word | style wording, checks, the style model |
-| `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic) | you add a speech engine |
+| `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic), and the Qwen3 size (0.6B default / 1.7B, saved in `speech_model.txt`) | you add a speech engine |
+| `translation.py` | The translation model: NLLB-200 600M / 1.3B (default) / 3.3B, saved in `translation_model.txt`. A new choice downloads if missing, then loads in the background and is swapped in; captions keep using the old one until then | you add a translation model |
 | `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real. `transcribe_clip()` does one dictation recording; a lock keeps it from running at the same time as live captions | mic or speech-model behaviour |
-| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B model downloads only when chosen, and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
+| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B speech model and the 600M / 3.3B translation models download only when chosen (from Hugging Face; no GitHub packs), `delete(key)` removes one (never the defaults or the one in use), and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
 | `hinglish.py` | Hindi ↔ Hinglish (Roman letters) spelling | Hinglish spelling |
 | `gdocs.py` | Queues lines and sends them to the Google Docs script, retrying when offline | Google Docs sending |
+| `song_match.py`, `song_mode.py` | **Song mode** ([design sprint](song-mode/01-requirements.md)). `song_match` compares what was heard with every lyric line in one spelling-proof Roman form (Devanagari and Roman Punjabi/Hindi match), finds the song and follows the line. `song_mode` is the state machine: off → listening → *suggested* ("Sounds like…", the operator taps *Show lyrics*) → *following* (the lyric + its translation replace the caption) ↔ *lost* (normal captions) → listening. Uses the 1.7B speech model while a song is shown, if downloaded | how songs are found or followed |
+| `song_library.py`, `song_import.py` | The song library (`~/.livecaptions/songs/library.db`, SQLite; uploaded files kept in `songs/files/`) and reading uploads (.docx, .pdf, .xlsx, .csv, .txt, pasted) into songs, lines and translations. Routes: `/songs`, `/songs/start|confirm|reject|next|back|stop|mode|delete|song|open|example`, `POST /songs/import` (read, nothing saved) and `POST /songs/save` | upload formats, library fields |
 | `obs_bridge.py`, `obs_setup.py`, `install_localvocal.py` | OBS: config, the script, the LocalVocal plugin | OBS integration |
 | `paths.py` | Every folder the app uses | never, unless a folder moves |
 | `dock.html`, `data/overlay.html` | The window/dock page, and the on-stream caption overlay | how they look |
@@ -101,9 +106,12 @@ Outside the app:
 | Folder | Job |
 |---|---|
 | `desktop/` | The desktop app (Handy fork, Tauri v2). Build: `cd desktop && bun install && bun run tauri build` (needs Rust, Bun, CMake). Dev: `bun run tauri dev` |
-| `desktop/src-tauri/src/live_captions.rs` | Finds Python (`LIVECAPTIONS_HOME`, the app's Resources, this source checkout's `.venv`, or an installed Live Captions), starts/stops the engine, and the `lc_request`, `lc_save_terms`, `lc_links` commands; `dictate()` for push-to-talk |
+| `desktop/src-tauri/src/live_captions.rs` | Finds Python (`LIVECAPTIONS_HOME`, the app's Resources, this source checkout's `.venv`, or an installed Live Captions), starts/stops the engine, and the `lc_request` (GET routes in `ALLOWED`), `lc_post` (`ALLOWED_POST`: song import/save), `lc_save_terms`, `lc_links` commands; `dictate()` for push-to-talk |
 | `desktop/src-tauri/src/actions.rs`, `settings.rs` | Handy's recorder → our engine when `speech_engine = live_captions` (default); `built_in` uses Handy's models. Updater is off unless `LIVECAPTIONS_ENABLE_UPDATER` is set |
+| `desktop/src/components/speech/EngineModelTable.tsx` | The *Transcription* (Qwen3) and *Translation* (NLLB) tables on the Models page, in Handy's `ModelTableRow` look: click to download or load, trash to delete (asks first). |
+| `desktop/src/components/speech/SpeechModels.tsx` | The one-line speech-model summary on the Live Captions page and footer. Handy's type-only models sit folded under it ("Dictation without translation"); its switch sets `speech_engine` |
 | `desktop/src/components/settings/live/` | The *Live Captions* and *Vocabulary* pages; `desktop/src/hooks/useEngine.ts` reads `/state` |
+| `desktop/src/components/songs/` | Song mode: the *Songs* page (library, upload, search, delete), the *Check the songs* step (`CheckSongs.tsx`), and the *Now singing* card/bar on the Live Captions page (`NowSinging.tsx`, keys ← → Esc) |
 | `desktop/src/i18n/locales/` | UI text in 26 languages (also builds the tray menu text) |
 | `obs/live_captions.lua` | The OBS script. It starts the app with OBS and adds the overlay. It looks for Python next to itself (installed) or in `.venv` (source) |
 | `installer/macos/` | Builds the `.pkg`/`.dmg`. `ARCH=arm64` or `ARCH=x86_64`. By default `Live Captions.app` is the desktop app with `Resources/{python,app,obs}` inside; `DESKTOP=0` = old launcher |
@@ -169,6 +177,8 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Desktop app code | `cargo test --lib` 338 passed; `tsc`, `eslint`, keyboard test pass | Nov 3 2026 | high |
 | Mac installer contains the desktop app | `ARCH=arm64 installer/macos/build.sh`: 60 MB `.pkg`; the app inside started the engine from its own `Resources/python` (not `.venv`), model ready, `/dictate` Hindi clip → *"…sewa (selfless service) in satsang…"* | Nov 3 2026 | high (Apple Silicon), **Intel and Windows installers not built yet** |
 | Desktop app with a real mic + shortcut, typing into another app | **not yet tested by a person** (needs mic + Accessibility permission) | — | untested |
+| Song mode finds the song and follows lines | `tests/test_songs.py --audio qwen-1.7b`: 8 songs (Hindi, Punjabi Roman + Devanagari, English, decoy, mid-song start, chorus), Mac voice + drone + echo through Qwen3: found within 2 lines, **0 wrong lines**, unknown song never shown; 0.6B weaker on Punjabi Devanagari | Nov 3 2026 | medium: **not yet on real singing** ([evidence](song-mode/02-feasibility.md)) |
+| Song uploads and Song mode states | `tests/test_songs.py`: paste, Excel, CSV, Word, scanned PDF message, .doc hint; suggest → confirm → follow → lost → found again → song over; Not this; off | Nov 3 2026 | high (code), **not yet used by an operator** |
 
 When you test something new, add a row. Results get stale: re-test after big updates
 (new PyTorch, new models, new OS version).

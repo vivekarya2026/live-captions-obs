@@ -45,12 +45,20 @@ MODELS = {
              "extra": [("facebook/nllb-200-distilled-1.3B", "sentencepiece.bpe.model")]},
     "qwen-0.6b": {"repo": "Qwen/Qwen3-ASR-0.6B", "size": 1.88e9, "label": "Speech (Qwen3-ASR 0.6B)"},
     "qwen-1.7b": {"repo": "Qwen/Qwen3-ASR-1.7B", "size": 4.7e9, "label": "Speech (Qwen3-ASR 1.7B)"},
+    # Other translation sizes, chosen on the Models page (same CTranslate2 int8 format as "nllb").
+    "nllb-600m": {"repo": "JustFrederik/nllb-200-distilled-600M-ct2-int8", "size": 0.65e9,
+                  "label": "Translation (NLLB-200 600M)"},
+    "nllb-3.3b": {"repo": "OpenNMT/nllb-200-3.3B-ct2-int8", "size": 3.38e9,
+                  "label": "Translation (NLLB-200 3.3B)",
+                  "extra": [("facebook/nllb-200-3.3B", "sentencepiece.bpe.model")]},
     # Caption styles Natural/Simple (meaning.py). Our own CTranslate2 int8 conversion, so it
     # comes from this project's GitHub release only (no Hugging Face repo).
     "meaning": {"repo": None, "size": MEANING_SIZE, "label": "Caption style model (Qwen2.5 0.5B)"},
 }
-ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b", "meaning"]  # translation first: Whisper captions need it too
-OPTIONAL = {"qwen-1.7b", "meaning"}  # downloaded only when chosen in the window
+ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b", "nllb-600m", "nllb-3.3b", "meaning"]  # translation first: Whisper captions need it too
+OPTIONAL = {"qwen-1.7b", "nllb-600m", "nllb-3.3b", "meaning"}  # downloaded only when chosen in the window
+# The app's defaults: needed to caption at all, so they can't be deleted.
+DEFAULTS = {"nllb", "qwen-0.6b"}
 # Offline pack: the same model files as zips, on this project's GitHub release "models-v1".
 # Used when huggingface.co can't be reached, or found on disk (Downloads/Desktop/Documents).
 PACKS = {"nllb", "qwen-0.6b", "meaning"}
@@ -123,6 +131,21 @@ def model_dir(key: str) -> Path:
 
 def model_ready(key: str) -> bool:
     return (model_dir(key) / ".complete").exists()
+
+
+def delete(key: str, in_use: set[str]) -> str:
+    """Remove a downloaded model's folder. Returns "" or why it was kept."""
+    if key not in MODELS:
+        return "unknown model"
+    if key in DEFAULTS:
+        return "the default model stays"
+    if key in in_use:
+        return "in use"
+    d = model_dir(key)
+    if d.exists():
+        shutil.rmtree(d, ignore_errors=True)
+        log.info("Deleted %s", MODELS[key]["label"])
+    return ""
 
 
 def runtime_ready() -> bool:

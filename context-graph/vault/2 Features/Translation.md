@@ -1,20 +1,23 @@
 ---
 id: feature:translation
 type: "feature"
-does: "NLLB-200 1.3B int8, Hindi <-> English"
+does: "NLLB-200 int8 (600M / 1.3B default / 3.3B), Hindi <-> English"
 ---
 # Translation
 
-**does:** NLLB-200 1.3B int8, Hindi <-> English
+**does:** NLLB-200 int8 (600M / 1.3B default / 3.3B), Hindi <-> English
 
 ## Links
 - must respect [[C1 Runs offline on the computer; only Google Docs uses the internet (text]]
 - must respect [[C4 Non-commercial use only (NLLB-200 licence)]]
 - built in [[app-livecaptions-translator.py]]
+- built in [[app-livecaptions-translation.py]]
+- built in [[desktop-src-components-speech-EngineModelTable.tsx]]
 
 ## Linked from
 - [[R04 Only English to Hindi and Hindi to English, polite, no abusive words,]] (answered by)
 - [[R07 Lower latency, faster captions, switch language both ways]] (answered by)
+- [[R23 Choose the transcription and translation models- download, load and de]] (answered by)
 - [[D02 NLLB-200 (CTranslate2, int8) for translation]] (about)
 - [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
 - [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)

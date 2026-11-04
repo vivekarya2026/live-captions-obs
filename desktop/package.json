@@ -15,15 +15,12 @@
     "format:frontend": "prettier --write .",
     "format:backend": "cd src-tauri && cargo fmt",
     "test:keyboard": "bun src/lib/utils/keyboard.test.ts",
-    "test:playwright": "playwright test",
-    "test:playwright:ui": "playwright test --ui",
     "check:translations": "bun scripts/check-translations.ts",
     "check:model-languages": "bun scripts/check-model-language-coverage.ts",
     "sync:catalog": "bun scripts/sync-catalog.ts",
     "check:catalog": "bun scripts/sync-catalog.ts --check",
     "build:cjk-font": "bun scripts/build-cjk-font.ts",
-    "check:cjk-font": "bun scripts/build-cjk-font.ts --check",
-    "postinstall": "bun scripts/check-nix-deps.ts"
+    "check:cjk-font": "bun scripts/build-cjk-font.ts --check"
   },
   "dependencies": {
     "@handy-computer/models": "0.2.3",
@@ -54,7 +51,6 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
     "@tauri-apps/cli": "^2.11.0",
     "@types/node": "^24.9.1",
     "@types/react": "^18.3.26",

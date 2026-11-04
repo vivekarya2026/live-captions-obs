@@ -10,3 +10,4 @@ type: "constraint"
 - [[Caption style]] (must respect)
 - [[Desktop app]] (must respect)
 - [[Dictation]] (must respect)
+- [[Song mode]] (must respect)

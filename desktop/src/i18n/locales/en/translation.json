@@ -22,7 +22,8 @@
     "about": "About",
     "live": "Live Captions",
     "dictation": "Dictation",
-    "vocabulary": "Vocabulary"
+    "vocabulary": "Vocabulary",
+    "songs": "Songs"
   },
   "onboarding": {
     "customModelDescription": "Not officially supported",
@@ -1034,12 +1035,7 @@
     "speech": {
       "title": "Speech",
       "model": "Speech model",
-      "modelDescription": "0.6B is fast and accurate with the vocabulary; 1.7B is larger (best with a GPU / Apple Silicon).",
-      "download": "downloads when chosen",
-      "dictation": "Dictation engine",
-      "dictationDescription": "What turns your push-to-talk recording into text. Live Captions: the same speech model, vocabulary, translation and caption style as the live captions. Built-in: the Whisper / Parakeet models on the Models page (transcription only, no translation).",
-      "engineLive": "Live Captions (translates)",
-      "engineBuiltIn": "Built-in models",
+      "modelDescription": "Hears the microphone for live captions and dictation. Runs on this computer.",
       "retry": "Try again"
     },
     "mic": {
@@ -1116,5 +1112,164 @@
     "sheet": "{{count}} terms from the vocabulary sheet (Excel). Edit it in Excel; changes apply within a few seconds.",
     "openSheet": "Open folder",
     "dictationTitle": "Dictation clean-up"
+  },
+  "speechModels": {
+    "title": "Speech model",
+    "description": "Hears the microphone for live captions and dictation, so the app can translate. Everything runs on this computer.",
+    "recommended": "Recommended",
+    "inUse": "In use",
+    "starting": "Starting…",
+    "downloading": "Downloading {{percent}}%",
+    "queued": "Waiting to download",
+    "failed": "Download failed",
+    "downloaded": "Downloaded",
+    "download": "Download · {{size}}",
+    "change": "Speech model: {{model}}. Change",
+    "models": {
+      "qwen-0.6b": {
+        "name": "Qwen3 0.6B",
+        "about": "Fast and accurate with your vocabulary. Good on any computer."
+      },
+      "qwen-1.7b": {
+        "name": "Qwen3 1.7B",
+        "about": "A little more accurate on hard audio. Best on Apple Silicon or an NVIDIA GPU."
+      }
+    },
+    "typeOnly": {
+      "title": "Dictation without translation",
+      "description": "Type exactly what you said, in any of 100+ languages. Live captions keep using the speech model above.",
+      "toggle": "Use one of these models for dictation",
+      "toggleOn": "Dictation types what you said, without translating. Audio files dropped on History use it too.",
+      "toggleOff": "Dictation translates with the speech model above. Audio files dropped on History use the model chosen here.",
+      "show": "Show models",
+      "hide": "Hide models"
+    }
+  },
+  "engineModels": {
+    "speechTitle": "Transcription",
+    "speechDescription": "Turns speech into text for live captions and dictation. Pick one to download it, then it's used.",
+    "speechHead": "Speech to text",
+    "translationTitle": "Translation",
+    "translationDescription": "Translates the captions. Bigger models translate better but need more memory; on Intel Macs and Windows 3.3B is slow.",
+    "translationHead": "Hindi ↔ English",
+    "qwen-0.6b": {
+      "name": "Qwen3-ASR 0.6B",
+      "about": "Fast and light. Works on most computers."
+    },
+    "qwen-1.7b": {
+      "name": "Qwen3-ASR 1.7B",
+      "about": "More accurate, needs more memory."
+    },
+    "nllb-600m": {
+      "name": "NLLB-200 600M",
+      "about": "Fastest translation, a little less accurate."
+    },
+    "nllb": {
+      "name": "NLLB-200 1.3B",
+      "about": "Balanced speed and quality."
+    },
+    "nllb-3.3b": {
+      "name": "NLLB-200 3.3B",
+      "about": "Best translation, slower and bigger."
+    },
+    "inUse": "In use",
+    "default": "Default",
+    "loading": "Loading…",
+    "queued": "Waiting to download…",
+    "download": "Click to download",
+    "delete": "Delete {{name}}",
+    "deleteAsk": "Delete {{name}} ({{size}})?",
+    "defaultKept": "The default model can't be deleted"
+  },
+  "songs": {
+    "title": "Songs",
+    "description": "Songs show the real lyrics and their translation on the stream while they're sung.",
+    "mode": "Song mode",
+    "modeDescription": "Listens for songs in your library. When it hears one, it asks you before showing the lyrics.",
+    "add": {
+      "title": "Add songs",
+      "drop": "Drop Word, PDF, Excel or text files here",
+      "choose": "Choose files",
+      "paste": "Paste lyrics",
+      "tip": "Tip: put the translation on the line under each line, or in the next column in Excel.",
+      "example": "Download an example file",
+      "reading": "Reading…",
+      "pasteTitle": "Paste lyrics",
+      "pastePlaceholder": "Song title\n\nFirst line of the song\nIts translation\nSecond line\nIts translation",
+      "read": "Read the lyrics",
+      "cancel": "Cancel"
+    },
+    "check": {
+      "title": "Check the songs",
+      "found_one": "Found {{count}} song",
+      "found_other": "Found {{count}} songs",
+      "in": "in {{source}}",
+      "lines_one": "{{count}} line",
+      "lines_other": "{{count}} lines",
+      "trFor": "{{lang}} for {{have}} of {{n}}",
+      "noTr": "no translation",
+      "showAll": "Show all lines",
+      "showLess": "Show fewer lines",
+      "edit": "Edit",
+      "done": "Done",
+      "skip": "Skip",
+      "skipped": "Skipped",
+      "undo": "Undo",
+      "shiftUp": "Translations one line up",
+      "shiftDown": "Translations one line down",
+      "shiftHint": "Translation is one line off?",
+      "titleLabel": "Song title",
+      "lineLabel": "Line {{n}}",
+      "trLabel": "Translation of line {{n}}",
+      "save_one": "Save {{count}} song",
+      "save_other": "Save {{count}} songs",
+      "cancel": "Cancel",
+      "saved_one": "Saved {{count}} song.",
+      "saved_other": "Saved {{count}} songs.",
+      "warn": {
+        "no title: the first line is used": "no title: the first line is used",
+        "no translation": "no translation",
+        "only one line": "only one line"
+      }
+    },
+    "lang": {
+      "hi": "Hindi",
+      "pa": "Punjabi",
+      "en": "English"
+    },
+    "search": "Search songs…",
+    "count_one": "{{count}} song",
+    "count_other": "{{count}} songs",
+    "empty": "No songs yet. Drop a file with lyrics to start.",
+    "noMatch": "No song matches “{{q}}”.",
+    "start": "Start {{title}} now",
+    "delete": "Delete {{title}}",
+    "deleteTitle": "Delete {{title}}?",
+    "deleteBody": "It's removed from the library. The file you uploaded stays in the songs folder.",
+    "deleteConfirm": "Delete",
+    "stopFirst": "Stop the song first",
+    "openFolder": "Open songs folder",
+    "lineCount_one": "{{count}} line",
+    "lineCount_other": "{{count}} lines",
+    "close": "Close",
+    "now": {
+      "listening": "Songs: listening ({{count}})",
+      "off": "Songs: off",
+      "empty": "Songs: no songs yet",
+      "soundsLike": "Sounds like",
+      "heard": "heard: “{{text}}”",
+      "show": "Show lyrics",
+      "notThis": "Not this",
+      "pick": "Pick the song…",
+      "pickTitle": "Which song is it?",
+      "line": "Line {{n}} of {{m}}",
+      "chorus": "chorus",
+      "next": "next: {{text}}",
+      "back": "Back",
+      "forward": "Next",
+      "stop": "Stop",
+      "lost": "Can't hear the song: showing normal captions.",
+      "footer": "♪ {{title}}"
+    }
   }
 }

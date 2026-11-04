@@ -298,6 +298,11 @@ on the maintainer's test list.)
 
 - **Desktop app says the engine can't be found**: it looks for the project's `.venv`. Set `LIVECAPTIONS_HOME` to the project folder, or install Live Captions first.
 - **Dictation records but types nothing (Mac)**: allow Live Captions in System Settings → Privacy & Security → **Accessibility**, then restart it.
+- **The Accessibility question comes back although it's already allowed (Mac)**: the switch belongs to an
+  older build. macOS ties the permission to the app's signature, and an ad-hoc signature (`codesign --sign -`)
+  changes with every build. Sign with a fixed certificate instead: this Mac has "Live Captions Local Signing"
+  in the login keychain, and `installer/macos/build.sh` uses it (or `SIGN_IDENTITY`). After switching, run
+  `tccutil reset Accessibility org.livecaptions.obs` once and allow it again; it then stays allowed.
 
 | Problem | Fix |
 |---|---|

@@ -20,6 +20,8 @@ does: "Handy fork (Tauri v2): menu bar / tray app with Live Captions, Vocabulary
 
 ## Linked from
 - [[R22 Deliver it with Handy's UI and features (dictation, history, overlay,]] (answered by)
+- [[R23 Choose the transcription and translation models- download, load and de]] (answered by)
+- [[R24 Upload song lyrics in any format (Hindi, English, Punjabi in Devanagar]] (answered by)
 - [[D08 Google Docs two ways- Way 1 (default) a script in the doc, pasted Web]] (about)
 - [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
 - [[D10 Dictation goes through -dictate, not Handy's Whisper]] (about)

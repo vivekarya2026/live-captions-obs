@@ -261,7 +261,24 @@ const ALLOWED: &[&str] = &[
     "/gdocs/script",
     "/terms",
     "/terms/open",
+    "/translation",
+    "/models/delete",
+    "/songs",
+    "/songs/song",
+    "/songs/mode",
+    "/songs/confirm",
+    "/songs/reject",
+    "/songs/next",
+    "/songs/back",
+    "/songs/stop",
+    "/songs/start",
+    "/songs/delete",
+    "/songs/open",
+    "/songs/example",
 ];
+
+/// POST routes the window may call with a JSON body (`lc_post`).
+const ALLOWED_POST: &[&str] = &["/songs/import", "/songs/save"];
 
 #[derive(Serialize, Type)]
 pub struct EngineReply {
@@ -319,6 +336,36 @@ pub async fn lc_save_terms(terms: Vec<CustomTerm>) -> EngineReply {
     tauri::async_runtime::spawn_blocking(move || {
         let body = serde_json::to_vec(&terms).unwrap_or_default();
         match http_post("/terms", body, Duration::from_secs(15)) {
+            Ok(v) => EngineReply {
+                data: Some(v.to_string()),
+                error: None,
+            },
+            Err(e) => EngineReply {
+                data: None,
+                error: Some(e),
+            },
+        }
+    })
+    .await
+    .unwrap_or(EngineReply {
+        data: None,
+        error: Some("internal error".into()),
+    })
+}
+
+/// A JSON POST to the engine (song import and save). Only `ALLOWED_POST` routes.
+#[tauri::command]
+#[specta::specta]
+pub async fn lc_post(path: String, body: String) -> EngineReply {
+    if !ALLOWED_POST.contains(&path.as_str()) {
+        return EngineReply {
+            data: None,
+            error: Some(format!("not allowed: {path}")),
+        };
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        // Reading a big PDF or Word file can take a while.
+        match http_post(&path, body.into_bytes(), Duration::from_secs(120)) {
             Ok(v) => EngineReply {
                 data: Some(v.to_string()),
                 error: None,

@@ -65,7 +65,7 @@
    "id": "feature:translation",
    "type": "feature",
    "name": "Translation",
-   "does": "NLLB-200 1.3B int8, Hindi <-> English"
+   "does": "NLLB-200 int8 (600M / 1.3B default / 3.3B), Hindi <-> English"
   },
   {
    "id": "feature:hinglish",
@@ -150,6 +150,12 @@
    "type": "feature",
    "name": "Custom words",
    "does": "Words added in the app (custom_terms.csv), win over the sheet"
+  },
+  {
+   "id": "feature:song-mode",
+   "type": "feature",
+   "name": "Song mode",
+   "does": "Song library (SQLite, any-format upload), recognises the song being sung, suggest + confirm, then follows line by line with the uploaded translation"
   },
   {
    "id": "feature:docs",
@@ -334,6 +340,22 @@
    "note": "Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet."
   },
   {
+   "id": "req:R23",
+   "type": "requirement",
+   "name": "Choose the transcription and translation models: download, load and delete each, in Handy's table look",
+   "date": "2026-11-03",
+   "status": "done",
+   "note": "Qwen3 0.6B / 1.7B and NLLB-200 600M / 1.3B / 3.3B. Defaults Qwen3 0.6B + NLLB 1.3B can't be deleted."
+  },
+  {
+   "id": "req:R24",
+   "type": "requirement",
+   "name": "Upload song lyrics in any format (Hindi, English, Punjabi in Devanagari or Roman letters, with translations); recognise the song while it's sung and show each line with its translation in the captions and document; design sprint with approval gates",
+   "date": "2026-11-03",
+   "status": "partial",
+   "note": "Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing."
+  },
+  {
    "id": "file:app/livecaptions/__main__.py",
    "type": "file",
    "name": "app/livecaptions/__main__.py",
@@ -372,7 +394,7 @@
    "id": "file:app/livecaptions/models.py",
    "type": "file",
    "name": "app/livecaptions/models.py",
-   "lines": 335,
+   "lines": 358,
    "summary": "First-run setup: downloads the speech and translation models (and the"
   },
   {
@@ -404,17 +426,52 @@
    "summary": "Qwen3-ASR speech recognition: listens to the microphone itself (so it works"
   },
   {
+   "id": "file:app/livecaptions/song_import.py",
+   "type": "file",
+   "name": "app/livecaptions/song_import.py",
+   "lines": 455,
+   "summary": "Song mode: read an upload (any format) and cut it into songs and lines."
+  },
+  {
+   "id": "file:app/livecaptions/song_library.py",
+   "type": "file",
+   "name": "app/livecaptions/song_library.py",
+   "lines": 140,
+   "summary": "Song mode: the song library (its own SQLite file) and reading uploads."
+  },
+  {
+   "id": "file:app/livecaptions/song_match.py",
+   "type": "file",
+   "name": "app/livecaptions/song_match.py",
+   "lines": 188,
+   "summary": "Song mode: find which song is being sung, and which line, from what the"
+  },
+  {
+   "id": "file:app/livecaptions/song_mode.py",
+   "type": "file",
+   "name": "app/livecaptions/song_mode.py",
+   "lines": 222,
+   "summary": "Song mode: the states from docs/song-mode/04-prototype.md (section 2)."
+  },
+  {
    "id": "file:app/livecaptions/speech.py",
    "type": "file",
    "name": "app/livecaptions/speech.py",
-   "lines": 225,
+   "lines": 259,
    "summary": "Chooses the speech engine:"
+  },
+  {
+   "id": "file:app/livecaptions/translation.py",
+   "type": "file",
+   "name": "app/livecaptions/translation.py",
+   "lines": 96,
+   "summary": "Chooses the translation model (NLLB-200 in three sizes). The pipeline keeps"
   },
   {
    "id": "file:app/livecaptions/translator.py",
    "type": "file",
    "name": "app/livecaptions/translator.py",
-   "lines": 1708,
+   "lines": 1851,
    "summary": "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English."
   },
   {
@@ -428,7 +485,7 @@
    "id": "file:app/livecaptions/data/overlay.html",
    "type": "file",
    "name": "app/livecaptions/data/overlay.html",
-   "lines": 59,
+   "lines": 70,
    "summary": ""
   },
   {
@@ -437,6 +494,11 @@
    "name": "app/livecaptions/data/google-docs/LiveCaptions.gs",
    "lines": 87,
    "summary": ""
+  },
+  {
+   "id": "file:desktop/src/components/speech/EngineModelTable.tsx",
+   "type": "file",
+   "name": "desktop/src/components/speech/EngineModelTable.tsx"
   },
   {
    "id": "file:installer/macos/build.sh",
@@ -482,6 +544,31 @@
    "id": "file:desktop/src/components/settings/live/VocabularySettings.tsx",
    "type": "file",
    "name": "desktop/src/components/settings/live/VocabularySettings.tsx"
+  },
+  {
+   "id": "file:desktop/src/components/songs/SongsSettings.tsx",
+   "type": "file",
+   "name": "desktop/src/components/songs/SongsSettings.tsx"
+  },
+  {
+   "id": "file:desktop/src/components/songs/CheckSongs.tsx",
+   "type": "file",
+   "name": "desktop/src/components/songs/CheckSongs.tsx"
+  },
+  {
+   "id": "file:desktop/src/components/songs/NowSinging.tsx",
+   "type": "file",
+   "name": "desktop/src/components/songs/NowSinging.tsx"
+  },
+  {
+   "id": "file:tests/test_songs.py",
+   "type": "file",
+   "name": "tests/test_songs.py"
+  },
+  {
+   "id": "file:docs/song-mode/01-requirements.md",
+   "type": "file",
+   "name": "docs/song-mode/01-requirements.md"
   },
   {
    "id": "file:docs/SETUP_GUIDE.md",
@@ -549,6 +636,11 @@
    "name": "/mode"
   },
   {
+   "id": "route:/models/delete",
+   "type": "route",
+   "name": "/models/delete"
+  },
+  {
    "id": "route:/quit",
    "type": "route",
    "name": "/quit"
@@ -569,6 +661,11 @@
    "name": "/setup/retry"
   },
   {
+   "id": "route:/songs/import",
+   "type": "route",
+   "name": "/songs/import"
+  },
+  {
    "id": "route:/speech",
    "type": "route",
    "name": "/speech"
@@ -587,6 +684,11 @@
    "id": "route:/terms/open",
    "type": "route",
    "name": "/terms/open"
+  },
+  {
+   "id": "route:/translation",
+   "type": "route",
+   "name": "/translation"
   },
   {
    "id": "test:tests/bench_meaning.py",
@@ -611,6 +713,12 @@
    "type": "test",
    "name": "tests/test_qwen_live.py",
    "summary": "Developer test: feed WAV clips through the Qwen3 engine (VAD + ASR, real-time"
+  },
+  {
+   "id": "test:tests/test_songs.py",
+   "type": "test",
+   "name": "tests/test_songs.py",
+   "summary": "Song mode feasibility test (docs/song-mode/02-feasibility.md)."
   },
   {
    "id": "test:tests/test_vocabulary.py",
@@ -863,6 +971,22 @@
    "confidence": "untested"
   },
   {
+   "id": "evidence:E21",
+   "type": "evidence",
+   "name": "Song mode finds the song and follows lines",
+   "how": "`tests/test_songs.py --audio qwen-1.7b`: 8 songs (Hindi, Punjabi Roman + Devanagari, English, decoy, mid-song start, chorus), Mac voice + drone + echo through Qwen3: found within 2 lines, **0 wrong lines**, unknown song never shown; 0.6B weaker on Punjabi Devanagari",
+   "date": "Nov 3 2026",
+   "confidence": "medium: **not yet on real singing** ([evidence](song-mode/02-feasibility.md))"
+  },
+  {
+   "id": "evidence:E22",
+   "type": "evidence",
+   "name": "Song uploads and Song mode states",
+   "how": "`tests/test_songs.py`: paste, Excel, CSV, Word, scanned PDF message, .doc hint; suggest → confirm → follow → lost → found again → song over; Not this; off",
+   "date": "Nov 3 2026",
+   "confidence": "high (code), **not yet used by an operator**"
+  },
+  {
    "id": "release:v1.0.0",
    "type": "release",
    "name": "v1.0.0"
@@ -1072,6 +1196,30 @@
    "source": "feature:custom-words",
    "type": "must_respect",
    "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "must_respect",
+   "target": "constraint:C2",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "must_respect",
+   "target": "constraint:C3",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "must_respect",
+   "target": "constraint:C5",
    "confidence": 1.0
   },
   {
@@ -1315,6 +1463,60 @@
    "confidence": 1.0
   },
   {
+   "source": "req:R23",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R23",
+   "type": "answered_by",
+   "target": "feature:translation",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R23",
+   "type": "answered_by",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R23",
+   "type": "answered_by",
+   "target": "feature:desktop-app",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R24",
+   "type": "answered_by",
+   "target": "feature:song-mode",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R24",
+   "type": "answered_by",
+   "target": "feature:overlay",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R24",
+   "type": "answered_by",
+   "target": "feature:sessions",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R24",
+   "type": "answered_by",
+   "target": "feature:google-docs",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R24",
+   "type": "answered_by",
+   "target": "feature:desktop-app",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:overlay",
    "type": "implemented_in",
    "target": "file:app/livecaptions/data/overlay.html",
@@ -1384,6 +1586,18 @@
    "source": "feature:translation",
    "type": "implemented_in",
    "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:translation",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translation.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:translation",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/speech/EngineModelTable.tsx",
    "confidence": 1.0
   },
   {
@@ -1591,6 +1805,78 @@
    "confidence": 1.0
   },
   {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/song_match.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/song_library.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/data/overlay.html",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/songs/SongsSettings.tsx",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/songs/CheckSongs.tsx",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:desktop/src/components/songs/NowSinging.tsx",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:tests/test_songs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:song-mode",
+   "type": "implemented_in",
+   "target": "file:docs/song-mode/01-requirements.md",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:docs",
    "type": "implemented_in",
    "target": "file:docs/SETUP_GUIDE.md",
@@ -1629,13 +1915,13 @@
   {
    "source": "file:app/livecaptions/install_localvocal.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/install_localvocal.py",
    "type": "imports",
-   "target": "file:app/livecaptions/models.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
@@ -1647,13 +1933,13 @@
   {
    "source": "file:app/livecaptions/obs_bridge.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/obs_bridge.py",
    "type": "imports",
-   "target": "file:app/livecaptions/models.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
@@ -1664,6 +1950,60 @@
   },
   {
    "source": "file:app/livecaptions/qwen_engine.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_import.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_import.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_library.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_match.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_library.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_match.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_mode.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_match.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_mode.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
    "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
@@ -1681,25 +2021,19 @@
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/speech.py",
+   "source": "file:app/livecaptions/translation.py",
    "type": "imports",
    "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/speech.py",
+   "source": "file:app/livecaptions/translation.py",
    "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
+   "source": "file:app/livecaptions/translation.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
@@ -1707,7 +2041,13 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_library.py",
    "confidence": 1.0
   },
   {
@@ -1719,7 +2059,25 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/gdocs.py",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
@@ -1737,7 +2095,19 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/meaning.py",
+   "target": "file:app/livecaptions/translation.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/gdocs.py",
    "confidence": 1.0
   },
   {
@@ -1837,6 +2207,18 @@
    "confidence": 1.0
   },
   {
+   "source": "route:/models/delete",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/models/delete",
+   "type": "part_of",
+   "target": "feature:caption-modes",
+   "confidence": 1.0
+  },
+  {
    "source": "route:/quit",
    "type": "served_by",
    "target": "file:app/livecaptions/translator.py",
@@ -1879,6 +2261,12 @@
    "confidence": 1.0
   },
   {
+   "source": "route:/songs/import",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
    "source": "route:/speech",
    "type": "served_by",
    "target": "file:app/livecaptions/translator.py",
@@ -1910,6 +2298,12 @@
   },
   {
    "source": "route:/terms/open",
+   "type": "served_by",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "route:/translation",
    "type": "served_by",
    "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
@@ -1947,13 +2341,13 @@
   {
    "source": "test:tests/test_meaning.py",
    "type": "tests",
-   "target": "file:app/livecaptions/meaning.py",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
    "source": "test:tests/test_meaning.py",
    "type": "tests",
-   "target": "file:app/livecaptions/translator.py",
+   "target": "file:app/livecaptions/meaning.py",
    "confidence": 1.0
   },
   {
@@ -1984,6 +2378,54 @@
    "source": "test:tests/test_qwen_live.py",
    "type": "checks",
    "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_match.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_library.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "checks",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "checks",
+   "target": "feature:song-mode",
    "confidence": 0.6
   },
   {
@@ -2501,6 +2943,48 @@
    "type": "proves",
    "target": "feature:desktop-app",
    "confidence": 0.6
+  },
+  {
+   "source": "evidence:E21",
+   "type": "proves",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E21",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E21",
+   "type": "proves",
+   "target": "feature:song-mode",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E21",
+   "type": "proved_by",
+   "target": "test:tests/test_songs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "evidence:E22",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E22",
+   "type": "proves",
+   "target": "feature:song-mode",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E22",
+   "type": "proved_by",
+   "target": "test:tests/test_songs.py",
+   "confidence": 1.0
   },
   {
    "source": "release:v1.0.1",

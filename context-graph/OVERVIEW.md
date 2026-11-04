@@ -33,6 +33,8 @@ flowchart LR
   R20["R20 Google Docs setup that people who…"]:::done
   R21["R21 Captions that follow the meaning:…"]:::done
   R22["R22 Deliver it with Handy's UI and…"]:::partial
+  R23["R23 Choose the transcription and…"]:::done
+  R24["R24 Upload song lyrics in any format…"]:::partial
   F_overlay(["Caption overlay"])
   F_dock(["App window and OBS dock"])
   F_obs_setup(["OBS setup"])
@@ -53,6 +55,7 @@ flowchart LR
   F_desktop_app(["Desktop app"])
   F_dictation(["Dictation"])
   F_custom_words(["Custom words"])
+  F_song_mode(["Song mode"])
   F_docs(["Guides"])
   R01 --> F_overlay
   R01 --> F_dock
@@ -93,6 +96,15 @@ flowchart LR
   R22 --> F_dictation
   R22 --> F_custom_words
   R22 --> F_vocabulary
+  R23 --> F_speech
+  R23 --> F_translation
+  R23 --> F_model_download
+  R23 --> F_desktop_app
+  R24 --> F_song_mode
+  R24 --> F_overlay
+  R24 --> F_sessions
+  R24 --> F_google_docs
+  R24 --> F_desktop_app
   F_overlay --> translator_py[/translator.py/]
   F_dock --> translator_py[/translator.py/]
   F_obs_setup --> obs_setup_py[/obs_setup.py/]
@@ -103,6 +115,7 @@ flowchart LR
   F_whisper_fallback --> obs_bridge_py[/obs_bridge.py/]
   F_whisper_fallback --> install_localvocal_py[/install_localvocal.py/]
   F_translation --> translator_py[/translator.py/]
+  F_translation --> translation_py[/translation.py/]
   F_hinglish --> hinglish_py[/hinglish.py/]
   F_hinglish --> translator_py[/translator.py/]
   F_caption_modes --> translator_py[/translator.py/]
@@ -122,6 +135,12 @@ flowchart LR
   F_dictation --> translator_py[/translator.py/]
   F_dictation --> qwen_engine_py[/qwen_engine.py/]
   F_custom_words --> translator_py[/translator.py/]
+  F_song_mode --> song_match_py[/song_match.py/]
+  F_song_mode --> song_mode_py[/song_mode.py/]
+  F_song_mode --> song_library_py[/song_library.py/]
+  F_song_mode --> song_import_py[/song_import.py/]
+  F_song_mode --> translator_py[/translator.py/]
+  F_song_mode --> speech_py[/speech.py/]
   classDef done fill:#173326,stroke:#4cc38a,color:#e8e9ec
   classDef partial fill:#3a2f14,stroke:#f0b54a,color:#e8e9ec
   classDef changed fill:#2e3038,stroke:#9aa0aa,color:#c9ccd3
@@ -136,6 +155,7 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - **R03** 95 to 100% accuracy: About 90% on Oct 30. Qwen3-ASR 1.7B, vocabulary context and spelling fixes raise it; no exact measure yet.
 - **R15** Intel Mac support: Built and run under Rosetta; not yet tested on a real Intel Mac.
 - **R22** Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding: Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet.
+- **R24** Upload song lyrics in any format (Hindi, English, Punjabi in Devanagari or Roman letters, with translations); recognise the song while it's sung and show each line with its translation in the captions and document; design sprint with approval gates: Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing.
 
 ## Not proven yet
 
@@ -146,7 +166,9 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - Caption styles: speed + quality: high (M4 Pro), **untested on Intel Mac / Windows**
 - Engine quits with the desktop app: high (Mac), **Windows untested**
 - Desktop app with a real mic + shortcut, typing into another app: untested
+- Song mode finds the song and follows lines: medium: **not yet on real singing** ([evidence](song-mode/02-feasibility.md))
+- Song uploads and Song mode states: high (code), **not yet used by an operator**
 
 ## Size
 
-6 constraints, 21 features, 22 requirements, 28 files, 17 routes, 5 tests, 12 decisions, 20 evidences, 12 releases, 275 links.
+6 constraints, 22 features, 24 requirements, 39 files, 20 routes, 6 tests, 12 decisions, 22 evidences, 12 releases, 335 links.
