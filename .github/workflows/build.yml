@@ -49,7 +49,7 @@ jobs:
       - name: Build .pkg
         run: ARCH=${{ matrix.arch }} ./installer/macos/build.sh
       - name: Check the signature
-        run: codesign -dv "build/macos-${{ matrix.arch }}/root/Applications/Live Captions.app" 2>&1 | grep "Authority=Live Captions Signing"
+        run: codesign -dvv "build/macos-${{ matrix.arch }}/root/Applications/Live Captions.app" 2>&1 | grep "Authority=Live Captions Signing"
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
