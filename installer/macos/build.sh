@@ -78,15 +78,20 @@ chmod +x "$RES/uninstall.sh"
 
 # 3. MIT notice of the desktop app's origin (Handy)
 cp "$ROOT/desktop/LICENSE" "$RES/LICENSE-Handy.txt"
-# Apple Silicon only runs signed code. A fixed identity (SIGN_IDENTITY, or the
-# "Live Captions Local Signing" certificate if this Mac has it) keeps macOS's
-# Accessibility/Microphone permission across updates; ad-hoc ("-") changes every
-# build, so the permission switch stays on but stops working.
+# Apple Silicon only runs signed code. One fixed certificate, "Live Captions Signing"
+# (this Mac's keychain; CI imports it from the MACOS_SIGN_P12 secret), keeps macOS's
+# Accessibility/Microphone permission across updates. Ad-hoc ("-") changes every
+# build, so the permission switch stays on but stops working: only a fallback.
 SIGN="${SIGN_IDENTITY:-}"
-if [ -z "$SIGN" ] && security find-certificate -c "Live Captions Local Signing" >/dev/null 2>&1; then
-  SIGN="Live Captions Local Signing"
+if [ -z "$SIGN" ] && security find-certificate -c "Live Captions Signing" >/dev/null 2>&1; then
+  SIGN="Live Captions Signing"
 fi
-codesign --force --deep --sign "${SIGN:--}" "$APP" >/dev/null 2>&1 || codesign --force --sign - "$APP"
+if [ -n "$SIGN" ]; then
+  codesign --force --deep --sign "$SIGN" "$APP"   # fail loudly: a silent ad-hoc build loses permissions
+else
+  echo "::warning::no 'Live Captions Signing' certificate: ad-hoc signature, Mac permissions reset on every update"
+  codesign --force --deep --sign - "$APP"
+fi
 
 # 4. The installer package
 pkgbuild --analyze --root "$PKGROOT" "$BUILD/component.plist" >/dev/null

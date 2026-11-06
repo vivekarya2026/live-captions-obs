@@ -34,8 +34,22 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/src-tauri
+      - name: Signing certificate (same one every release, so Mac permissions survive updates)
+        env:
+          P12: ${{ secrets.MACOS_SIGN_P12 }}
+          PW: ${{ secrets.MACOS_SIGN_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/sign.keychain-db"
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/sign.p12"
+          security create-keychain -p ci "$KC" && security set-keychain-settings "$KC" && security unlock-keychain -p ci "$KC"
+          security import "$RUNNER_TEMP/sign.p12" -k "$KC" -P "$PW" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k ci "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/sign.p12"
       - name: Build .pkg
         run: ARCH=${{ matrix.arch }} ./installer/macos/build.sh
+      - name: Check the signature
+        run: codesign -dv "build/macos-${{ matrix.arch }}/root/Applications/Live Captions.app" 2>&1 | grep "Authority=Live Captions Signing"
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}

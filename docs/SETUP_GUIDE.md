@@ -300,8 +300,9 @@ on the maintainer's test list.)
 - **Dictation records but types nothing (Mac)**: allow Live Captions in System Settings → Privacy & Security → **Accessibility**, then restart it.
 - **The Accessibility question comes back although it's already allowed (Mac)**: the switch belongs to an
   older build. macOS ties the permission to the app's signature, and an ad-hoc signature (`codesign --sign -`)
-  changes with every build. Sign with a fixed certificate instead: this Mac has "Live Captions Local Signing"
-  in the login keychain, and `installer/macos/build.sh` uses it (or `SIGN_IDENTITY`). After switching, run
+  changes with every build. Every build is now signed with one fixed certificate, "Live Captions Signing"
+  (file and password in `~/Library/Application Support/LiveCaptionsSigning`, never in git; CI gets it
+  from the `MACOS_SIGN_P12` / `MACOS_SIGN_PASSWORD` secrets). After moving to a build with a new signature, run
   `tccutil reset Accessibility org.livecaptions.obs` once and allow it again; it then stays allowed.
 
 | Problem | Fix |
