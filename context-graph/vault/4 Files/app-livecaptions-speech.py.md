@@ -9,9 +9,9 @@ summary: "Chooses the speech engine:"
 **summary:** Chooses the speech engine:
 
 ## Links
+- uses [[app-livecaptions-obs_bridge.py]]
 - uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-paths.py]]
-- uses [[app-livecaptions-obs_bridge.py]]
 - uses [[app-livecaptions-qwen_engine.py]]
 
 ## Linked from

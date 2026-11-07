@@ -1,7 +1,7 @@
 ---
 id: file:app/livecaptions/models.py
 type: "file"
-lines: 364
+lines: 372
 summary: "First-run setup: downloads the speech and translation models (and the"
 ---
 # app/livecaptions/models.py

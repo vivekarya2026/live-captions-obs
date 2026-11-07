@@ -408,7 +408,7 @@
    "id": "file:app/livecaptions/models.py",
    "type": "file",
    "name": "app/livecaptions/models.py",
-   "lines": 364,
+   "lines": 372,
    "summary": "First-run setup: downloads the speech and translation models (and the"
   },
   {
@@ -2085,13 +2085,13 @@
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/translator.py",
+   "target": "file:app/livecaptions/hinglish.py",
    "confidence": 1.0
   },
   {
@@ -2127,6 +2127,12 @@
   {
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
@@ -2134,12 +2140,6 @@
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/speech.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
@@ -2151,6 +2151,12 @@
   {
    "source": "file:app/livecaptions/translation.py",
    "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translation.py",
+   "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
@@ -2158,36 +2164,6 @@
    "source": "file:app/livecaptions/translation.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translation.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/speech.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_mode.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_import.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -2199,7 +2175,43 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
    "target": "file:app/livecaptions/gdocs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/meaning.py",
    "confidence": 1.0
   },
   {
@@ -2217,25 +2229,13 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/meaning.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_setup.py",
+   "target": "file:app/livecaptions/speech.py",
    "confidence": 1.0
   },
   {
@@ -2511,19 +2511,7 @@
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
-   "target": "file:app/livecaptions/song_library.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "test:tests/test_songs.py",
-   "type": "tests",
    "target": "file:app/livecaptions/song_match.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "test:tests/test_songs.py",
-   "type": "tests",
-   "target": "file:app/livecaptions/qwen_engine.py",
    "confidence": 1.0
   },
   {
@@ -2535,13 +2523,25 @@
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
-   "target": "file:app/livecaptions/song_mode.py",
+   "target": "file:app/livecaptions/qwen_engine.py",
    "confidence": 1.0
   },
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
    "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_library.py",
    "confidence": 1.0
   },
   {

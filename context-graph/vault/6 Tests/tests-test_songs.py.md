@@ -8,12 +8,12 @@ summary: "Song mode feasibility test (docs/song-mode/02-feasibility.md)."
 **summary:** Song mode feasibility test (docs/song-mode/02-feasibility.md).
 
 ## Links
-- tests [[app-livecaptions-song_library.py]]
 - tests [[app-livecaptions-song_match.py]]
-- tests [[app-livecaptions-qwen_engine.py]]
 - tests [[app-livecaptions-song_import.py]]
-- tests [[app-livecaptions-song_mode.py]]
+- tests [[app-livecaptions-qwen_engine.py]]
 - tests [[app-livecaptions-translator.py]]
+- tests [[app-livecaptions-song_mode.py]]
+- tests [[app-livecaptions-song_library.py]]
 - checks [[Caption language]] *(keyword match)*
 - checks [[Song mode]] *(keyword match)*
 

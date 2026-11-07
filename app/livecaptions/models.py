@@ -284,7 +284,15 @@ class Setup:
                 self._install_runtime()
                 self._fire("runtime")
             for key in todo:
-                self._download(key)
+                try:
+                    self._download(key)
+                except Exception:
+                    # huggingface.co blocked and no pack of this speech model (1.7B, Hinglish):
+                    # install the 0.6B pack instead so captions work (speech.py uses any ready one)
+                    if not key.startswith("qwen-") or key in PACKS or model_ready("qwen-0.6b"):
+                        raise
+                    log.exception("%s failed; installing qwen-0.6b from its pack instead", key)
+                    self._download("qwen-0.6b")
             self.stage, self.message = "done", "All models are ready"
         except Exception as e:
             log.exception("Setup failed")

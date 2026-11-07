@@ -9,9 +9,9 @@ summary: "Chooses the translation model (NLLB-200 in three sizes). The pipeline 
 **summary:** Chooses the translation model (NLLB-200 in three sizes). The pipeline keeps
 
 ## Links
+- uses [[app-livecaptions-obs_bridge.py]]
 - uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-paths.py]]
-- uses [[app-livecaptions-obs_bridge.py]]
 
 ## Linked from
 - [[Translation]] (built in)
