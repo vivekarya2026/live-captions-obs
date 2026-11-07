@@ -70,7 +70,8 @@ cd app
 ../.venv/bin/python -m livecaptions --test
 ```
 
-`--download` takes 10–30 minutes (~5 GB; the 1.7B model only downloads when chosen) and also installs PyTorch (Intel Mac: 2.2.2; NVIDIA PC:
+`--download` takes 10–40 minutes (~8 GB with the default 1.7B speech model; on Intel Macs / PCs without NVIDIA first run
+`echo qwen-0.6b > ~/.livecaptions/speech_model.txt` for ~5 GB) and also installs PyTorch (Intel Mac: 2.2.2; NVIDIA PC:
 the GPU build). Run it in the background and report progress now and then.
 **Check:** `--test` prints `IN:`/`OUT:` lines, and Hindi lines come out as English
 (e.g. `आज हम सब मिलकर सत्संग में सेवा करेंगे।` → `Today we will all do sewa (selfless service) in satsang…`).
@@ -94,7 +95,7 @@ Ask the user to **quit OBS**, then from `app`:
 `../.venv/bin/python -m livecaptions` opens the window at http://127.0.0.1:8765/.
 **Check:** `curl -s http://127.0.0.1:8765/state` returns JSON. Ask the user to allow the
 microphone, pick the language (e.g. Hindi → English), say a sentence and confirm captions appear.
-Suggest the **0.6B** speech model on Intel Macs and PCs without NVIDIA.
+Suggest the **0.6B** speech model on Intel Macs and PCs without NVIDIA (1.7B is the default and slow there).
 
 ### 7b. Desktop app (only if the user wants it)
 

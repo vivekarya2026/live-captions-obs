@@ -21,13 +21,13 @@ Project page: **https://github.com/vivekarya2026/live-captions-obs**
 | **Windows 10 / 11 (64-bit)** | Settings → System → About → *System type: 64-bit* | `LiveCaptions-…-Windows-x64-Setup.exe` |
 
 Every computer needs: **macOS 12+ or Windows 10/11**, about **10 GB free space**, and internet for the
-first start only (about 5 GB downloads once: translation, speech engine, speech model; the larger 1.7B model adds 4.7 GB only if you pick it). After that it works offline.
+first start only (about 8 GB downloads once: translation, speech engine and the 1.7B speech model; pick the 0.6B model instead for 1.8 GB). After that it works offline.
 
 | Speed | What to expect |
 |---|---|
-| Mac Apple Silicon | fast; both speech models (0.6B and 1.7B) work |
+| Mac Apple Silicon | fast; all speech models work (1.7B default, best with mixed Hindi-English) |
 | Windows with NVIDIA graphics | fast |
-| Mac Intel / Windows without NVIDIA | works on the processor; use the **0.6B** speech model (2019+ i5/i7/i9 or Ryzen 5+ recommended) |
+| Mac Intel / Windows without NVIDIA | works on the processor; switch to the **0.6B** speech model (1.7B is slow there; 2019+ i5/i7/i9 or Ryzen 5+ recommended) |
 
 **Using OBS?** Install [OBS Studio](https://obsproject.com/) **before** Live Captions and quit it
 before installing. OBS is optional.
@@ -231,7 +231,7 @@ on Windows). Or ask the agent: *“Start Live Captions.”*
    pick one; nothing goes online). If a sentence can't be rewritten quickly or safely, that sentence shows
    word for word, so captions never wait. `bilingual.txt` keeps the word-for-word line too.
 3. **Microphone**: pick the mic and check the level moves when you speak.
-4. **Speech model**: **0.6B** on Intel Macs and PCs without NVIDIA; **1.7B** is more accurate on fast computers.
+4. **Speech model**: **1.7B** (default) follows speakers who mix Hindi and English in one sentence best; **0.6B** on Intel Macs and PCs without NVIDIA. *0.6B Hinglish* is a community fine-tune to compare.
 5. Switch **Captions ON**. Speak a sentence; the original and translation appear.
 6. **Mic on/off**: turning listening off releases the microphone completely (the orange mic dot on
    Mac goes away).

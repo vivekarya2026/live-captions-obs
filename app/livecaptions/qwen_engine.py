@@ -9,6 +9,7 @@ While a sentence is still being spoken a partial caption is sent every
 from __future__ import annotations
 
 import logging
+import os
 import platform
 import queue
 import threading
@@ -23,8 +24,11 @@ log = logging.getLogger("qwen")
 
 SR = 16000
 FRAME = 512                 # 32 ms, the frame size Silero VAD expects at 16 kHz
-END_SILENCE = 0.6           # seconds of silence that end a sentence (shorter cuts sentences mid-thought)
-MAX_SEGMENT = 10.0          # force a cut on very long sentences
+# Short phrases: Qwen3 picks the language per phrase, so a cut at every short pause
+# lets it follow Hindi <-> English switches. Overridable for benchmarking.
+END_SILENCE = float(os.environ.get("LIVECAPTIONS_END_SILENCE", "0.3"))   # seconds of silence that end a phrase
+MAX_SEGMENT = float(os.environ.get("LIVECAPTIONS_MAX_SEGMENT", "3.0"))   # force a cut on longer phrases
+CUT_SEARCH = 0.5            # forced cut: at the quietest frame in the last this-many seconds
 MIN_SPEECH = 0.35           # ignore clicks / coughs shorter than this
 PARTIAL_EVERY = 2.0         # partial caption while still speaking
 DICTATION_PIECE = 25.0      # push-to-talk recordings are transcribed in pieces of at most this
@@ -106,7 +110,7 @@ class QwenEngine:
         model = Qwen3ASRModel.from_pretrained(str(models.model_dir(key)), dtype=dtype, device_map=device,
                                               max_new_tokens=160)
         silence = np.zeros(SR // 2, dtype=np.float32)
-        model.transcribe(audio=(silence, SR), language="English")  # warm-up
+        model.transcribe(audio=(silence, SR), language=None)  # warm-up
         with self._lock:
             old, self.model, self.model_key = self.model, model, key
         del old
@@ -221,6 +225,7 @@ class QwenEngine:
         import torch
         vad = load_silero_vad()
         buf: list[np.ndarray] = []
+        probs: list[float] = []     # VAD probability of each frame in buf
         speaking = False
         silence = 0.0
         last_partial = 0.0
@@ -232,7 +237,7 @@ class QwenEngine:
             except queue.Empty:
                 continue
             if not self.enabled or self.model is None:
-                buf, speaking, pending = [], False, np.zeros(0, dtype=np.float32)
+                buf, probs, speaking, pending = [], [], False, np.zeros(0, dtype=np.float32)
                 continue
             if self.gain != 1.0:
                 chunk = chunk * self.gain
@@ -242,23 +247,32 @@ class QwenEngine:
                 prob = float(vad(torch.from_numpy(frame), SR).item())
                 if prob >= self.threshold:
                     if not speaking:
-                        speaking, buf, last_partial = True, buf[-8:], 0.0  # keep ~250 ms lead-in
+                        speaking, buf, probs, last_partial = True, buf[-8:], probs[-8:], 0.0  # ~250 ms lead-in
                         self._seg_id += 1
                     silence = 0.0
-                    buf.append(frame)
                 elif speaking:
-                    buf.append(frame)
                     silence += frame_s
                 else:
-                    buf = (buf + [frame])[-8:]
+                    buf, probs = (buf + [frame])[-8:], (probs + [prob])[-8:]
                     continue
+                buf.append(frame)
+                probs.append(prob)
                 dur = len(buf) * frame_s
-                if speaking and (silence >= END_SILENCE or dur >= MAX_SEGMENT):
+                if speaking and silence >= END_SILENCE:
                     if dur - silence >= MIN_SPEECH:
                         speech_samples = int((dur - silence) * SR)
                         self._jobs.put((np.concatenate(buf), True, self._seg_id, speech_samples))
-                    speaking, buf, silence = False, [], 0.0
+                    speaking, buf, probs, silence = False, [], [], 0.0
                     vad.reset_states()
+                elif speaking and dur >= MAX_SEGMENT:
+                    # Still talking: cut at the quietest frame of the last CUT_SEARCH seconds
+                    # (between words, not through one) and go on with the rest as a new phrase.
+                    n = max(1, int(CUT_SEARCH / frame_s))
+                    cut = len(buf) - n + int(np.argmin(probs[-n:])) + 1
+                    head = np.concatenate(buf[:cut])
+                    self._jobs.put((head, True, -self._seg_id, len(head)))  # negative id: phrase goes on
+                    buf, probs, last_partial = buf[cut:], probs[cut:], 0.0
+                    self._seg_id += 1
                 elif speaking and dur - last_partial >= PARTIAL_EVERY and self._jobs.empty():
                     last_partial = dur
                     audio = np.concatenate(buf)
@@ -270,13 +284,15 @@ class QwenEngine:
                 audio, final, seg, speech_samples = self._jobs.get(timeout=0.5)
             except queue.Empty:
                 continue
+            cont = seg < 0   # cut at MAX_SEGMENT while still talking: the sentence isn't over
+            seg = abs(seg)
             if not final and (seg != self._seg_id or not self._jobs.empty()):
                 continue  # a newer piece of audio is waiting: skip this partial
             p_seg, p_samples, p_text = self._last_partial
             if final and p_seg == seg and p_text and p_samples >= speech_samples - int(0.15 * SR):
                 # The last partial already heard the whole sentence: use it, no second pass.
                 self._last_partial = (0, 0, "")
-                self.on_text(p_text, True)
+                self.on_text(p_text.rstrip(".।?!") if cont else p_text, True)
                 continue
             with self._lock:
                 model = self.model
@@ -287,6 +303,8 @@ class QwenEngine:
                 with self._infer_lock:
                     r = model.transcribe(audio=(audio, SR), language=self.language, context=self.context)
                 text = (r[0].text or "").strip()
+                if cont:
+                    text = text.rstrip(".।?!")  # joined with the rest of the sentence downstream
                 self._last_partial = (seg, speech_samples, text) if not final else (0, 0, "")
                 if text:
                     log.debug("qwen %s %.2fs (%.1fs audio): %s", "final" if final else "partial",

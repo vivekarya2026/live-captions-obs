@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import queue
 import threading
 
@@ -16,18 +17,33 @@ log = logging.getLogger("speech")
 
 MODEL_FILE = paths.DATA / "speech_model.txt"
 LOCAL_MIC_FILE = paths.DATA / "microphone.json"   # mic chosen in the app window when OBS isn't running
-SPEECH_MODELS = {"qwen-0.6b": "Qwen3 0.6B (fast)", "qwen-1.7b": "Qwen3 1.7B (larger)"}
-DEFAULT_MODEL = "qwen-0.6b"   # with the vocabulary as context it was as accurate as 1.7B, 2x faster
+SPEECH_MODELS = {"qwen-1.7b": "Qwen3 1.7B (default)", "qwen-0.6b": "Qwen3 0.6B (fast)",
+                 "qwen-0.6b-hinglish": "Qwen3 0.6B Hinglish (fine-tune)"}
+# 1.7B follows mid-sentence Hindi/English switches best. LIVECAPTIONS_ASR_MODEL=<key>
+# picks another default (e.g. qwen-0.6b-hinglish, to benchmark the fine-tune).
+DEFAULT_MODEL = os.environ.get("LIVECAPTIONS_ASR_MODEL", "qwen-1.7b")
+if DEFAULT_MODEL not in SPEECH_MODELS:
+    DEFAULT_MODEL = "qwen-1.7b"
 WHISPER_LANG = {"en": "English", "hi": "Hindi", "auto": None}
 NOISE_LEVELS = {"low": 0.4, "medium": 0.55, "high": 0.7}   # voice-detector threshold
 
 
 def read_model() -> str:
+    """The chosen speech model. Nothing chosen yet: the default, unless an older
+    install already has another model downloaded (keep using it, no 4.7 GB surprise)."""
+    if os.environ.get("LIVECAPTIONS_ASR_MODEL") in SPEECH_MODELS:
+        return DEFAULT_MODEL
     try:
         m = MODEL_FILE.read_text().strip()
-        return m if m in SPEECH_MODELS else DEFAULT_MODEL
+        if m in SPEECH_MODELS:
+            return m
     except OSError:
-        return DEFAULT_MODEL
+        pass
+    if not models.model_ready(DEFAULT_MODEL):
+        for k in SPEECH_MODELS:
+            if models.model_ready(k):
+                return k
+    return DEFAULT_MODEL
 
 
 def local_mic() -> dict:
@@ -71,6 +87,7 @@ class Speech:
         self.status = ""
         self.language = "auto"
         self.context = ""
+        self.whisper_context = ""   # vocabulary prompt for Whisper in OBS (Qwen3 gets `context`)
         self.noise = "medium"
         self.enabled = True
         self.borrowed = ""   # Song mode is using this model for now (not saved)
@@ -87,7 +104,9 @@ class Speech:
         self.language, self.context, self.noise, self.enabled = language, context, noise, enabled
         q = self.qwen
         if q is not None:
-            q.language = WHISPER_LANG.get(language)
+            # Never force a language: Qwen3 then follows mid-sentence Hindi/English switches.
+            # The caption mode still decides the output language downstream.
+            q.language = None
             q.context = context
             q.threshold = NOISE_LEVELS.get(noise, 0.55)
             q.enabled = enabled and not self.mic_muted()
@@ -113,8 +132,9 @@ class Speech:
     def start_qwen_if_ready(self, on_started=None) -> None:
         if self.loading or self.engine == "qwen":
             return
-        key = self.model_key if self.qwen_possible() else DEFAULT_MODEL
-        if not self.qwen_possible(key):
+        # The chosen model, else any downloaded one (e.g. an offline install that only has 0.6B)
+        key = next((k for k in [self.model_key, *SPEECH_MODELS] if self.qwen_possible(k)), "")
+        if not key:
             return
         self.loading = True
         self.status = f"loading {SPEECH_MODELS[key]}…"
@@ -214,7 +234,7 @@ class Speech:
             "truncate_output_file": True,
             "no_timestamps": False, "no_context": True,
             "vad_threshold": NOISE_LEVELS.get(self.noise, 0.55) + 0.1,
-            "initial_prompt": self.context[:400],
+            "initial_prompt": (self.whisper_context or self.context)[:400],
         }
 
     def sync_obs(self) -> str:

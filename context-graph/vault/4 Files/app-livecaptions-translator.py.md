@@ -1,7 +1,7 @@
 ---
 id: file:app/livecaptions/translator.py
 type: "file"
-lines: 1851
+lines: 1950
 summary: "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English."
 ---
 # app/livecaptions/translator.py
@@ -9,22 +9,23 @@ summary: "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish 
 **summary:** Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English.
 
 ## Links
-- uses [[app-livecaptions-song_mode.py]]
-- uses [[app-livecaptions-song_library.py]]
-- uses [[app-livecaptions-obs_setup.py]]
-- uses [[app-livecaptions-paths.py]]
-- uses [[app-livecaptions-meaning.py]]
-- uses [[app-livecaptions-song_import.py]]
-- uses [[app-livecaptions-obs_bridge.py]]
-- uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-speech.py]]
-- uses [[app-livecaptions-translation.py]]
-- uses [[app-livecaptions-hinglish.py]]
+- uses [[app-livecaptions-song_mode.py]]
+- uses [[app-livecaptions-song_import.py]]
+- uses [[app-livecaptions-models.py]]
+- uses [[app-livecaptions-song_library.py]]
 - uses [[app-livecaptions-gdocs.py]]
+- uses [[app-livecaptions-hinglish.py]]
+- uses [[app-livecaptions-translation.py]]
+- uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-obs_bridge.py]]
+- uses [[app-livecaptions-meaning.py]]
+- uses [[app-livecaptions-obs_setup.py]]
 
 ## Linked from
 - [[Caption overlay]] (built in)
 - [[App window and OBS dock]] (built in)
+- [[Hindi + English in one sentence]] (built in)
 - [[Translation]] (built in)
 - [[Hinglish]] (built in)
 - [[Caption language]] (built in)

@@ -53,6 +53,9 @@ REQUIREMENTS = {
     "R24": ("2026-11-03", "Upload song lyrics in any format (Hindi, English, Punjabi in Devanagari or Roman letters, with translations); recognise the song while it's sung and show each line with its translation in the captions and document; design sprint with approval gates",
             "partial", ["song-mode", "overlay", "sessions", "google-docs", "desktop-app"],
             "Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing."),
+    "R25": ("2026-11-07", "Hindi and English mixed in one sentence (Hinglish code-switching): Qwen3-ASR without a forced language, a Hinglish context with the vocabulary, short VAD phrases, phonetic vocabulary repair before translation; 1.7B default with the Hinglish 0.6B fine-tune switchable",
+            "partial", ["code-switching", "speech", "vocabulary", "spelling-fixes", "model-download"],
+            "Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers."),
 }
 
 # Rules that hold for every change (from AGENTS.md and the conversations)
@@ -71,8 +74,11 @@ FEATURES = {
     "dock": ("App window and OBS dock", "One local web page for every setting", ["dock.html", "translator.py"], ["C3"],
              ["window", "dock"]),
     "obs-setup": ("OBS setup", "Adds the script, overlay and dock to OBS", ["obs_setup.py", "obs_bridge.py"], ["C3"], ["obs"]),
-    "speech": ("Speech to text", "Qwen3-ASR 0.6B / 1.7B on the computer's own mic", ["qwen_engine.py", "speech.py"],
+    "speech": ("Speech to text", "Qwen3-ASR 1.7B (default) / 0.6B / 0.6B Hinglish fine-tune on the computer's own mic", ["qwen_engine.py", "speech.py"],
                ["C1", "C2", "C5"], ["qwen3", "speech", "asr"]),
+    "code-switching": ("Hindi + English in one sentence", "language=None + Hinglish ASR context, 0.3 s / 3 s phrases, 'mixed' lines repaired by sound (snap_terms) then translated",
+                       ["qwen_engine.py", "speech.py", "translator.py", "hinglish.py", "/tests/test_vocabulary.py", "/tests/test_qwen_live.py"],
+                       ["C1", "C5"], ["hinglish", "code-switch", "mixed"]),
     "whisper-fallback": ("Whisper fallback", "LocalVocal captions until Qwen3 is ready",
                          ["speech.py", "obs_bridge.py", "install_localvocal.py"], ["C5"], ["whisper", "localvocal"]),
     "translation": ("Translation", "NLLB-200 int8 (600M / 1.3B default / 3.3B), Hindi <-> English", ["translator.py", "translation.py", "/desktop/src/components/speech/EngineModelTable.tsx"], ["C1", "C4"], ["nllb", "translation"]),

@@ -35,10 +35,12 @@ flowchart LR
   R22["R22 Deliver it with Handy's UI and…"]:::partial
   R23["R23 Choose the transcription and…"]:::done
   R24["R24 Upload song lyrics in any format…"]:::partial
+  R25["R25 Hindi and English mixed in one…"]:::partial
   F_overlay(["Caption overlay"])
   F_dock(["App window and OBS dock"])
   F_obs_setup(["OBS setup"])
   F_speech(["Speech to text"])
+  F_code_switching(["Hindi + English in one sentence"])
   F_whisper_fallback(["Whisper fallback"])
   F_translation(["Translation"])
   F_hinglish(["Hinglish"])
@@ -105,12 +107,21 @@ flowchart LR
   R24 --> F_sessions
   R24 --> F_google_docs
   R24 --> F_desktop_app
+  R25 --> F_code_switching
+  R25 --> F_speech
+  R25 --> F_vocabulary
+  R25 --> F_spelling_fixes
+  R25 --> F_model_download
   F_overlay --> translator_py[/translator.py/]
   F_dock --> translator_py[/translator.py/]
   F_obs_setup --> obs_setup_py[/obs_setup.py/]
   F_obs_setup --> obs_bridge_py[/obs_bridge.py/]
   F_speech --> qwen_engine_py[/qwen_engine.py/]
   F_speech --> speech_py[/speech.py/]
+  F_code_switching --> qwen_engine_py[/qwen_engine.py/]
+  F_code_switching --> speech_py[/speech.py/]
+  F_code_switching --> translator_py[/translator.py/]
+  F_code_switching --> hinglish_py[/hinglish.py/]
   F_whisper_fallback --> speech_py[/speech.py/]
   F_whisper_fallback --> obs_bridge_py[/obs_bridge.py/]
   F_whisper_fallback --> install_localvocal_py[/install_localvocal.py/]
@@ -156,6 +167,7 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - **R15** Intel Mac support: Built and run under Rosetta; not yet tested on a real Intel Mac.
 - **R22** Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding: Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet.
 - **R24** Upload song lyrics in any format (Hindi, English, Punjabi in Devanagari or Roman letters, with translations); recognise the song while it's sung and show each line with its translation in the captions and document; design sprint with approval gates: Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing.
+- **R25** Hindi and English mixed in one sentence (Hinglish code-switching): Qwen3-ASR without a forced language, a Hinglish context with the vocabulary, short VAD phrases, phonetic vocabulary repair before translation; 1.7B default with the Hinglish 0.6B fine-tune switchable: Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers.
 
 ## Not proven yet
 
@@ -168,7 +180,8 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - Desktop app with a real mic + shortcut, typing into another app: untested
 - Song mode finds the song and follows lines: medium: **not yet on real singing** ([evidence](song-mode/02-feasibility.md))
 - Song uploads and Song mode states: high (code), **not yet used by an operator**
+- Hindi + English in one sentence (audio): medium: **synthetic voice only; not yet on real code-switched speakers**
 
 ## Size
 
-6 constraints, 22 features, 24 requirements, 39 files, 20 routes, 6 tests, 12 decisions, 22 evidences, 12 releases, 335 links.
+6 constraints, 23 features, 25 requirements, 41 files, 20 routes, 6 tests, 12 decisions, 24 evidences, 14 releases, 358 links.

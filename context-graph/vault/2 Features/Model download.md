@@ -18,6 +18,7 @@ does: "First-run download with progress, GitHub fallback, offline packs"
 - [[R15 Intel Mac support]] (answered by)
 - [[R18 Fix the first download stuck at 0%]] (answered by)
 - [[R23 Choose the transcription and translation models- download, load and de]] (answered by)
+- [[R25 Hindi and English mixed in one sentence (Hinglish code-switching)- Qwe]] (answered by)
 - [[setup-retry]] (part of)
 - [[tests-test_meaning.py]] (checks)
 - [[D04 PyTorch is downloaded on first start, not bundled]] (about)

@@ -26,6 +26,17 @@ flowchart LR
 Everything in the middle runs on the user's computer. Only the Google Docs part uses the internet,
 and it sends text only, never audio.
 
+**Hindi and English in one sentence.** Qwen3-ASR runs with `language=None` and a context that says the
+speech is code-switched Hinglish, followed by the vocabulary (`Vocabulary.asr_context()`, template in
+`translator.ASR_CONTEXT`). The voice detector ends a phrase at a 0.3 s pause (`LIVECAPTIONS_END_SILENCE`)
+and cuts a phrase longer than 3 s (`LIVECAPTIONS_MAX_SEGMENT`) at its quietest moment. That cut piece has
+no end mark, so the main loop joins it with what follows before translating. A line with both scripts
+is detected as `mixed`. `snap_terms` puts misheard vocabulary back by sound, in either script; it compares
+`hinglish.loose_key` forms, and Devanagari is read through its Roman form. `HINGLISH_CONFUSIONS` fixes English
+words that are really Hindi, but only next to a Devanagari word (`coach`→`कुछ`). Roman Hindi then goes to
+Devanagari, while English words stay Latin, and the line follows the usual Hindi path (protect terms →
+NLLB → restore terms).
+
 **Caption styles.** *Word for word* is NLLB's translation as it is. *Natural* and *Simple* add one
 step: a small text model rewrites the **English** by meaning (`meaning.py`). It never translates. For a
 Hindi speaker it rewrites NLLB's English; for an English speaker with Hindi captions it rewrites the
@@ -86,10 +97,10 @@ flowchart TD
 |---|---|---|
 | `translator.py` | Runs the pipeline. Also serves the window and the OBS dock on port 8765 (`/state`, `/mode`, `/style`, `/speech?model=`, `/translation?model=`, `/models/delete?key=`, `/mic`, `/captions`, `/gdocs`, `/terms`, `/quit`…) and, for the desktop app, `POST /dictate` (one recording → text) and `POST /terms` (custom words → `custom_terms.csv`). POSTs from a web page (`Origin` / `Sec-Fetch-Site` set) are refused. `--desktop PID` = started by the desktop app: no window, quit when that PID ends | the cleanup, translation, or window behaviour changes |
 | `meaning.py` | Caption styles *Natural* / *Simple*: prompts, the rewrite with a time limit, and the safety checks that fall back to word for word | style wording, checks, the style model |
-| `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic), and the Qwen3 size (0.6B default / 1.7B, saved in `speech_model.txt`) | you add a speech engine |
+| `speech.py` | Chooses Qwen3 (own mic) or LocalVocal (OBS mic), and the Qwen3 model (1.7B default; 0.6B; 0.6B Hinglish fine-tune `moorlee/qwen3-asr-0.6b-hinglish`; saved in `speech_model.txt`, or `LIVECAPTIONS_ASR_MODEL=<key>` to benchmark). Older installs with only 0.6B keep it. Qwen3 never gets a forced language | you add a speech engine |
 | `translation.py` | The translation model: NLLB-200 600M / 1.3B (default) / 3.3B, saved in `translation_model.txt`. A new choice downloads if missing, then loads in the background and is swapped in; captions keep using the old one until then | you add a translation model |
 | `qwen_engine.py` | Opens the mic, detects speech, runs Qwen3-ASR. Turning the mic off closes it for real. `transcribe_clip()` does one dictation recording; a lock keeps it from running at the same time as live captions | mic or speech-model behaviour |
-| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The 1.7B speech model and the 600M / 3.3B translation models download only when chosen (from Hugging Face; no GitHub packs), `delete(key)` removes one (never the defaults or the one in use), and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
+| `models.py` | Downloads the models and installs PyTorch on first start. Intel Macs get PyTorch 2.2.2. If huggingface.co fails it uses the model pack on GitHub (release `models-v1`) or a pack zip found in Downloads/Desktop/Documents. The speech models (1.7B default, 0.6B, 0.6B Hinglish) download when chosen (a new install: 1.7B; offline packs have 0.6B only), and so do the 600M / 3.3B translation models (from Hugging Face; no GitHub packs), `delete(key)` removes one (never the defaults or the one in use), and the caption style model (`meaning`, GitHub only) only when Natural/Simple is chosen | model versions, download logic |
 | `hinglish.py` | Hindi ↔ Hinglish (Roman letters) spelling | Hinglish spelling |
 | `gdocs.py` | Queues lines and sends them to the Google Docs script, retrying when offline | Google Docs sending |
 | `song_match.py`, `song_mode.py` | **Song mode** ([design sprint](song-mode/01-requirements.md)). `song_match` compares what was heard with every lyric line in one spelling-proof Roman form (Devanagari and Roman Punjabi/Hindi match), finds the song and follows the line. `song_mode` is the state machine: off → listening → *suggested* ("Sounds like…", the operator taps *Show lyrics*) → *following* (the lyric + its translation replace the caption) ↔ *lost* (normal captions) → listening. Uses the 1.7B speech model while a song is shown, if downloaded | how songs are found or followed |
@@ -139,7 +150,7 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 
 | Decision | Why | Revisit when |
 |---|---|---|
-| Qwen3-ASR for speech | Best Hindi + English accuracy in our tests; 0.6B is fast, 1.7B more accurate | a better offline Hindi model appears |
+| Qwen3-ASR for speech | Best Hindi + English accuracy in our tests; 1.7B follows mid-sentence switches best (default since Nov 7 2026), 0.6B is faster | a better offline Hindi model appears |
 | NLLB-200 (CTranslate2, int8) for translation | Offline, good Hindi ↔ English, small | licence needs change (NLLB is non-commercial) |
 | Caption styles: Qwen2.5-0.5B-Instruct (CTranslate2 int8) rewrites English only, greedy, 1.5 s limit | Speed test on 30 real lines (M4 Pro): 0.5B median 0.5 s Natural / 0.4 s Simple, never over 1.5 s; 1.5B was nicer but median 1.4 s with 12/30 Natural over 1.5 s. Qwen3-1.7B: fewest rejections but median 1.7 s, 23/30 Natural over 1.5 s. The small model sometimes changes the meaning, so strict checks fall back to word for word | a faster computer target, or the checks reject too often: try 1.5B (`tests/bench_meaning.py`) |
 | PyTorch is downloaded on first start, not bundled | Keeps installers under 70 MB; picks the GPU build on NVIDIA PCs | never, unless offline installs are needed |
@@ -179,6 +190,8 @@ On Windows `~` means `%USERPROFILE%`. Tests can point `LIVECAPTIONS_DATA` and
 | Desktop app with a real mic + shortcut, typing into another app | **not yet tested by a person** (needs mic + Accessibility permission) | — | untested |
 | Song mode finds the song and follows lines | `tests/test_songs.py --audio qwen-1.7b`: 8 songs (Hindi, Punjabi Roman + Devanagari, English, decoy, mid-song start, chorus), Mac voice + drone + echo through Qwen3: found within 2 lines, **0 wrong lines**, unknown song never shown; 0.6B weaker on Punjabi Devanagari | Nov 3 2026 | medium: **not yet on real singing** ([evidence](song-mode/02-feasibility.md)) |
 | Song uploads and Song mode states | `tests/test_songs.py`: paste, Excel, CSV, Word, scanned PDF message, .doc hint; suggest → confirm → follow → lost → found again → song over; Not this; off | Nov 3 2026 | high (code), **not yet used by an operator** |
+| Hindi + English in one sentence (text) | `tests/test_vocabulary.py` *Hindi + English* checks: mixed line detected and captioned in all 3 modes, terms snapped by sound in both scripts, real words untouched, context echo dropped; still `ALL TERMS EXACT` | Nov 7 2026 | high (code) |
+| Hindi + English in one sentence (audio) | `tests/test_qwen_live.py`, 4 mixed + 1 Hindi Mac-voice clips, M4 Pro. Before (forced Hindi, 0.6 s / 10 s): English words written in Devanagari (*एंड देन वी विल डू सेवा* → "Den We Will Do sewa"), finals 3.0 s after speech. Now 1.7B: English stays Latin (*but slides*, *Then we will do seva*), finals 2.6 s after speech. 0.6B Hinglish: best on names (*सुदीक्षा जी*) and English words, but more invented words (*सिंबरन*, *बिद्ध लव*) | Nov 7 2026 | medium: **synthetic voice only; not yet on real code-switched speakers** |
 
 When you test something new, add a row. Results get stale: re-test after big updates
 (new PyTorch, new models, new OS version).

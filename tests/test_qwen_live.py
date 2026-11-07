@@ -25,7 +25,22 @@ results = []
 t_end = [0.0]
 
 
+fragment = [""]
+
+
 def on_text(text, final):
+    # Same joining as the app's main loop: a cut-off piece is translated with what follows
+    if fragment[0]:
+        text = fragment[0] + " " + text
+    if final:
+        fragment[0] = text if translator.is_fragment(text) else ""
+        if fragment[0]:
+            print(f"  (held) {text}", flush=True)
+            return
+    show(text, final)
+
+
+def show(text, final):
     t0 = time.time()
     caption = pipeline.process(text, "speech")
     lag = time.time() - t_end[0]
@@ -34,9 +49,11 @@ def on_text(text, final):
           f" | {text}\n        -> {caption}", flush=True)
 
 
+import os
+OLD = os.environ.get("OLD") == "1"   # benchmark the previous setup: forced language + old context
 eng = qwen_engine.QwenEngine(on_text)
 eng.load(key)
-eng.context = pipeline.vocab.asr_context_for("hi")
+eng.context = pipeline.vocab.asr_context_for("hi") if OLD else pipeline.vocab.asr_context()
 eng._open_stream = lambda: None          # no real microphone: we feed the queue below
 eng.start()
 
@@ -56,7 +73,7 @@ for clip in clips:
     name = Path(clip).name
     mode = modes.get(name[0], "auto")
     pipeline.mode = mode
-    eng.language = qwen_engine.QWEN_LANG[translator.MODES[mode]["whisper"]]
+    eng.language = qwen_engine.QWEN_LANG[translator.MODES[mode]["whisper"]] if OLD else None
     audio, sr = sf.read(clip, dtype="float32")
     assert sr == qwen_engine.SR, f"{clip}: need 16 kHz mono"
     pad = np.zeros(int(sr * 0.4), dtype=np.float32)
@@ -64,8 +81,11 @@ for clip in clips:
     feed(np.concatenate([pad, audio]))
     t_end[0] = time.time()
     feed(np.zeros(int(sr * 3), dtype=np.float32))   # silence after speaking
+    if fragment[0]:   # nothing followed (the app does this after FRAGMENT_JOIN_SECONDS)
+        held, fragment[0] = fragment[0], ""
+        show(held, True)
 eng.stop()
-finals = [lag for final, lag in results if final]
+finals = [lag for final, lag in results if final and lag < 60]
 if finals:
     print(f"\n{len(finals)} final captions; shown on average {np.mean(finals):.2f}s after the speaker stopped "
           f"(includes the {qwen_engine.END_SILENCE}s pause that ends a sentence)")

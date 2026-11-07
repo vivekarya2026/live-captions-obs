@@ -59,7 +59,13 @@ TRANSCRIPTS = DATA / "transcripts"
 SESSIONS_DIR = paths.SESSIONS
 HINGLISH_LEXICON = VOCAB_DIR / "hinglish_lexicon.json"
 NO_TEXT_SOURCE = "(file output only)"
-QWEN_MODEL_FILE = DATA / "speech_model.txt"   # qwen-0.6b (default) or qwen-1.7b
+QWEN_MODEL_FILE = DATA / "speech_model.txt"   # qwen-1.7b (default), qwen-0.6b or qwen-0.6b-hinglish
+# Qwen3-ASR context (decoded with language=None, so a sentence can switch language mid-way)
+ASR_EXAMPLE = "toh basically hum log कल meeting करेंगे because deadline आने वाली है."
+ASR_CONTEXT = ("Bilingual Hindi-English (Hinglish) code-switching audio. Speakers switch between English "
+               "and Hindi mid-sentence. Transcribe English in Latin script and Hindi in Devanagari or "
+               "Romanized Hindi without forcing English phonetics onto Hindi words. Example: " + ASR_EXAMPLE
+               + " CRITICAL HOTWORDS / VOCABULARY (always spell and preserve these exact terms accurately): {vocab}")
 
 POLL_SECONDS = 0.05
 CLEAR_AFTER_SECONDS = 5  # speech captions disappear this long after the speaker stops
@@ -68,9 +74,10 @@ STANDALONE_IDLE_QUIT = 180   # started by hand: stop this long after nothing (ap
 
 
 def is_fragment(text: str) -> bool:
-    """A short piece without an end mark ("हर पल में", "so his"): the speaker paused mid-sentence."""
+    """A piece without an end mark ("हर पल में", "so his"): the speaker paused mid-sentence,
+    or the speech engine cut a long phrase (3 s, up to ~14 words)."""
     t = text.strip()
-    return bool(t) and t[-1] not in ".?!।॥\"'" and len(t.split()) <= 6
+    return bool(t) and t[-1] not in ".?!।॥\"'" and len(t.split()) <= 14
 
 # Caption direction, chosen in the OBS "Caption Language" panel.
 #   auto        : English -> Hinglish and Hindi/Hinglish -> English (detected per sentence)
@@ -381,13 +388,41 @@ class Vocabulary:
             if " " not in key and len(key) >= 4:
                 self._roman_single.setdefault(_skeleton(key), []).append(key)
         self._dev_single = [d for d in self.hindi_to_term if " " not in d and len(d) >= 4]
-        self.asr_context = self.asr_context_for("auto")
+        # Phonetic keys of one-word terms in both scripts (snap_terms): key -> (Roman, Devanagari)
+        from .hinglish import loose_key, roman_of
+        self._loose_terms: dict[str, tuple[str, str]] = {}
+        for key in self.english_sub:
+            if " " not in key and len(key) >= 4:
+                roman = self.canonical.get(key, key).split(" (")[0]
+                self._loose_terms.setdefault(loose_key(key), (roman, self.term_to_hindi.get(key, "")))
+        for dev, key in self.hindi_to_term.items():
+            if " " not in dev and len(dev) >= 3:
+                roman = self.canonical.get(key, key).split(" (")[0]
+                self._loose_terms.setdefault(loose_key(roman_of(dev)), (roman, dev))
+        self.asr_context_text = self.asr_context()
+
+    def asr_vocab_list(self, limit: int = 700) -> str:
+        """The vocabulary for Qwen3-ASR, most common terms first: Roman spellings,
+        then Devanagari. ~700 characters: the full list made each sentence ~0.3 s
+        slower for no accuracy gain."""
+        order = sorted(self.canonical, key=lambda k: -self.mentions.get(k, 0))
+        roman = list(dict.fromkeys(self.canonical[k] for k in order if len(self.canonical[k]) <= 60))
+        dev = sorted(self.hindi_to_term, key=lambda d: -self.mentions.get(self.hindi_to_term[d], 0))
+        dev = list(dict.fromkeys(d for d in dev if len(d) <= 60))
+        out = ""
+        for t in roman[:60] + dev[:80]:
+            if len(out) + len(t) + 2 > limit:
+                break
+            out += (", " if out else "") + t
+        return out
+
+    def asr_context(self) -> str:
+        """Qwen3-ASR context (language=None): code-switched speech + the vocabulary."""
+        return ASR_CONTEXT.format(vocab=self.asr_vocab_list())
 
     def asr_context_for(self, language: str | None, limit: int = 700) -> str:
-        """Vocabulary for Qwen3-ASR's context prompt, most common terms first:
-        Roman spellings for English speech, Devanagari for Hindi, both for auto.
-        ~700 characters: the full list made each sentence ~0.3 s slower for no
-        accuracy gain; a much shorter one made the model sometimes repeat it."""
+        """Whisper's (LocalVocal) prompt: the vocabulary in the speaker's script.
+        Roman spellings for English speech, Devanagari for Hindi, both for auto."""
         order = sorted(self.canonical, key=lambda k: -self.mentions.get(k, 0))
         roman = list(dict.fromkeys(self.canonical[k] for k in order if len(self.canonical[k]) <= 60))
         dev = sorted(self.hindi_to_term, key=lambda d: -self.mentions.get(self.hindi_to_term[d], 0))
@@ -436,9 +471,45 @@ class Vocabulary:
             return re.sub(r"[\u0900-\u0963\u0966-\u097F]+", fix_dev, text)
         return text
 
+    def snap_terms(self, text: str) -> str:
+        """Code-switched lines: snap misheard vocabulary words back to the exact term,
+        in either script. Words are compared by sound (hinglish.loose_key; Devanagari
+        via its Roman reading), so सिमरण -> सिमरन and simrun -> simran; real English
+        or Hindi words are left alone. Then the usual near-miss fixes for each script."""
+        from .hinglish import loose_key, roman_of
+
+        def snap(m: re.Match) -> str:
+            w = m.group(0)
+            dev = bool(DEVANAGARI_LETTER.match(w))
+            if len(w) < (3 if dev else 4):
+                return w
+            if dev:
+                if w in self.hindi_to_term or w in self._known_hindi:
+                    return w
+                hit = self._loose_terms.get(loose_key(roman_of(w)))
+            else:
+                lw = w.lower()
+                if lw in ENGLISH_WORDS or lw in self.english_sub:
+                    return w
+                hit = self._loose_terms.get(loose_key(lw))
+            if not hit:
+                return w
+            roman, devanagari = hit
+            if dev:
+                return devanagari or roman
+            return roman[:1].upper() + roman[1:] if w[:1].isupper() else roman
+
+        text = re.sub(r"[A-Za-z\u00C0-\u024F]+|[\u0900-\u0963\u0966-\u097F]+", snap, text)
+        return self.fix_recognition(self.fix_recognition(text, "en"), "hi")
+
     def is_context_echo(self, text: str) -> bool:
         """True if the transcript is just a list of vocabulary terms, which
-        Qwen3-ASR sometimes outputs (from its context prompt) on noise/silence."""
+        Qwen3-ASR sometimes outputs (from its context prompt) on noise/silence,
+        or a piece of the context's instructions / example sentence."""
+        squash = lambda s: re.sub(r"[^\w\u0900-\u097F]+", " ", s.lower()).strip()
+        t = squash(text)
+        if len(t) >= 12 and (t in squash(ASR_CONTEXT) or _edit_distance(t, squash(ASR_EXAMPLE)) <= len(t) // 4):
+            return True
         parts = [p.strip(" .।") for p in re.split(r"[,،]", text) if p.strip(" .।")]
         if len(parts) < 4:
             return False
@@ -689,6 +760,19 @@ SPOKEN_PHRASE_FIXES = [
 # Hindi words the translator misreads; replaced only in what it is given.
 TRANSLATION_HINTS = [(_W + r"दात(?![\u0900-\u097F])", "उपहार")]  # "ज्ञान की दात" = gift, not teeth
 
+# Mixed Hindi-English lines: English words that are really misheard Hindi words.
+# Only applied next to a Devanagari word ("हम coach नहीं" -> "हम कुछ नहीं"), so plain
+# English ("the coach said") is never touched. ponytail: a fixed table, not context
+# inference; add pairs as live tests find them.
+HINGLISH_CONFUSIONS = {"coach": "कुछ", "kutch": "कुछ", "hay": "है", "kay": "के"}
+_CONFUSION_RE = re.compile(
+    rf"(?<=[\u0900-\u097F] )({'|'.join(HINGLISH_CONFUSIONS)})\b|\b({'|'.join(HINGLISH_CONFUSIONS)})(?= [\u0900-\u097F])",
+    re.IGNORECASE)
+
+
+def fix_confusions(text: str) -> str:
+    return _CONFUSION_RE.sub(lambda m: HINGLISH_CONFUSIONS[(m.group(1) or m.group(2)).lower()], text)
+
 
 def looks_like_hindi(text: str, pipeline: "CaptionPipeline") -> bool:
     """True if most Devanagari words are real Hindi words or vocabulary terms.
@@ -724,6 +808,9 @@ def detect_language(text: str) -> str | None:
     total = dev + ara + lat + other
     if total < 2:
         return None
+    # Code-switched speech ("hum log कल meeting करेंगे"): both scripts in one sentence
+    if dev / total >= 0.2 and lat / total >= 0.2 and (dev + lat) / total >= 0.9:
+        return "mixed"
     if dev / total >= 0.5:
         return "hi"
     if ara / total >= 0.5:
@@ -864,6 +951,13 @@ class CaptionPipeline:
             if fixed != text:
                 log.info("Vocabulary fix: %s  ->  %s", text, fixed)
                 text = fixed
+        elif source == "speech" and lang == "mixed":
+            fixed = fix_confusions(self.vocab.snap_terms(text))  # "सिमरण" -> "सिमरन", "coach" -> "कुछ"
+            for wrong, right in SPOKEN_PHRASE_FIXES:
+                fixed = re.sub(wrong, right, fixed)
+            if fixed != text:
+                log.info("Vocabulary fix: %s  ->  %s", text, fixed)
+                text = fixed
 
         from .hinglish import is_hinglish, to_devanagari
         if lang == "en" and is_hinglish(text, ENGLISH_WORDS):
@@ -876,9 +970,12 @@ class CaptionPipeline:
             log.info("Dropped (not real Hindi): %s", text)
             return None
 
-        if lang == "hinglish":
-            # Roman Hindi -> Devanagari so the translator understands it
+        if lang in ("hinglish", "mixed"):
+            # Roman Hindi -> Devanagari so the translator understands it (English words
+            # stay in Latin letters: NLLB handles code-switched Hindi well)
             dev = to_devanagari(text, self.lexicon, ENGLISH_WORDS, terms=self.vocab.roman_to_hindi)
+            if lang == "mixed":
+                dev = self.fix_hindi_spelling(dev)
             if self.mode == "en-hi":
                 out = dev
             elif self.mode == "en-hinglish":
@@ -925,7 +1022,7 @@ def log_transcript(source: str, original: str, caption: str) -> None:
         f.write(f"[{now:%H:%M:%S}] ({source}) {original}\n           -> {caption}\n")
 
 
-LANG_NAMES = {"en": "English", "hi": "Hindi", "hinglish": "Hinglish", "ur": "Hindi (Urdu script)",
+LANG_NAMES = {"en": "English", "hi": "Hindi", "hinglish": "Hinglish", "mixed": "Hindi + English", "ur": "Hindi (Urdu script)",
               "other": "Other", "pa": "Punjabi", "song": "Song"}
 
 
@@ -1185,7 +1282,8 @@ class App:
 
     def configure_speech(self) -> None:
         lang_code = MODES[self.pipeline.mode]["whisper"]
-        self.speech.configure(lang_code, self.pipeline.vocab.asr_context_for(lang_code),
+        self.speech.whisper_context = self.pipeline.vocab.asr_context_for(lang_code)
+        self.speech.configure(lang_code, self.pipeline.vocab.asr_context(),
                               read_noise_level(), captions_on())
 
     def sync(self, wait: bool = False) -> None:
@@ -1580,7 +1678,7 @@ def run(with_obs: bool = False, parent_pid: int = 0) -> None:
     setup.when_ready("runtime", lambda: app.speech.start_qwen_if_ready(app.sync))
     for key in SPEECH_MODELS:
         setup.when_ready(key, lambda k=key: app.speech.on_model_downloaded(k, app.sync))
-    setup.start()                                    # downloads whatever is missing
+    setup.start(want=app.speech.model_key)           # downloads whatever is missing (+ the chosen speech model)
     app.speech.start_qwen_if_ready(app.sync)         # already downloaded: start now
     app.sync()                                       # LocalVocal on/off + language
 
@@ -1828,8 +1926,9 @@ def main(argv=None) -> None:
         write_atomic(MODE_FILE, args.mode)
         print(f"Caption mode set to: {MODES[args.mode]['label']}")
     elif args.download:
+        from .speech import read_model
         s = models.Setup()
-        s.start()
+        s.start(want=read_model())   # + the chosen speech model (1.7B on a new install)
         while s.running:
             st = s.status()
             print(f"\r{st['percent']:3d}%  {st['message']:60.60}", end="", flush=True)

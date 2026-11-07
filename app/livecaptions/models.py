@@ -3,8 +3,9 @@ Python packages Qwen3-ASR needs) in the background, with progress for the dock.
 
   runtime    PyTorch + qwen-asr + sounddevice   ~1.5 GB (Mac) / ~2.5 GB (NVIDIA)
   nllb       Meta NLLB-200 1.3B int8 (CTranslate2) translation   1.3 GB
-  qwen-0.6b  Qwen3-ASR 0.6B speech recognition (default)         1.8 GB
-  qwen-1.7b  Qwen3-ASR 1.7B speech recognition (dock option)     4.4 GB, only when chosen
+  qwen-1.7b  Qwen3-ASR 1.7B speech recognition (default)         4.7 GB
+  qwen-0.6b  Qwen3-ASR 0.6B speech recognition (faster option)   1.8 GB, only when chosen
+  qwen-0.6b-hinglish  0.6B fine-tuned on Hindi-English speech    1.6 GB, only when chosen
   meaning    Qwen2.5 Instruct int8 (CTranslate2), caption styles  only when Natural/Simple is chosen
 
 Models can also come from an offline pack (LiveCaptions-model-*.zip, see PACKS).
@@ -45,6 +46,9 @@ MODELS = {
              "extra": [("facebook/nllb-200-distilled-1.3B", "sentencepiece.bpe.model")]},
     "qwen-0.6b": {"repo": "Qwen/Qwen3-ASR-0.6B", "size": 1.88e9, "label": "Speech (Qwen3-ASR 0.6B)"},
     "qwen-1.7b": {"repo": "Qwen/Qwen3-ASR-1.7B", "size": 4.7e9, "label": "Speech (Qwen3-ASR 1.7B)"},
+    # Community fine-tune of 0.6B on Hindi-English code-switched speech (to benchmark against 1.7B)
+    "qwen-0.6b-hinglish": {"repo": "moorlee/qwen3-asr-0.6b-hinglish", "size": 1.58e9,
+                           "label": "Speech (Qwen3-ASR 0.6B Hinglish fine-tune)"},
     # Other translation sizes, chosen on the Models page (same CTranslate2 int8 format as "nllb").
     "nllb-600m": {"repo": "JustFrederik/nllb-200-distilled-600M-ct2-int8", "size": 0.65e9,
                   "label": "Translation (NLLB-200 600M)"},
@@ -55,10 +59,12 @@ MODELS = {
     # comes from this project's GitHub release only (no Hugging Face repo).
     "meaning": {"repo": None, "size": MEANING_SIZE, "label": "Caption style model (Qwen2.5 0.5B)"},
 }
-ORDER = ["nllb", "qwen-0.6b", "qwen-1.7b", "nllb-600m", "nllb-3.3b", "meaning"]  # translation first: Whisper captions need it too
-OPTIONAL = {"qwen-1.7b", "nllb-600m", "nllb-3.3b", "meaning"}  # downloaded only when chosen in the window
+ORDER = ["nllb", "qwen-1.7b", "qwen-0.6b", "qwen-0.6b-hinglish", "nllb-600m", "nllb-3.3b", "meaning"]  # translation first: Whisper captions need it too
+# Downloaded only when chosen. Speech models too: at launch the app asks for the chosen
+# one (speech.read_model(): 1.7B on a new install), so a 0.6B install isn't sent 4.7 GB.
+OPTIONAL = {"qwen-0.6b", "qwen-1.7b", "qwen-0.6b-hinglish", "nllb-600m", "nllb-3.3b", "meaning"}
 # The app's defaults: needed to caption at all, so they can't be deleted.
-DEFAULTS = {"nllb", "qwen-0.6b"}
+DEFAULTS = {"nllb", "qwen-1.7b"}
 # Offline pack: the same model files as zips, on this project's GitHub release "models-v1".
 # Used when huggingface.co can't be reached, or found on disk (Downloads/Desktop/Documents).
 PACKS = {"nllb", "qwen-0.6b", "meaning"}

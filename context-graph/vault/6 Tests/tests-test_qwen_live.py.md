@@ -10,3 +10,6 @@ summary: "Developer test: feed WAV clips through the Qwen3 engine (VAD + ASR, re
 ## Links
 - tests [[app-livecaptions-qwen_engine.py]]
 - checks [[Speech to text]] *(keyword match)*
+
+## Linked from
+- [[E24 Hindi + English in one sentence (audio)]] (proved by)

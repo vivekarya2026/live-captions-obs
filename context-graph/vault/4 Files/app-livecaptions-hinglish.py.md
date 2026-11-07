@@ -9,6 +9,7 @@ summary: "Devanagari Hindi <-> Hinglish (Hindi written in everyday Roman letters
 **summary:** Devanagari Hindi <-> Hinglish (Hindi written in everyday Roman letters).
 
 ## Linked from
+- [[Hindi + English in one sentence]] (built in)
 - [[Hinglish]] (built in)
 - [[app-livecaptions-song_import.py]] (uses)
 - [[app-livecaptions-song_match.py]] (uses)

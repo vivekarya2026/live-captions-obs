@@ -13,3 +13,4 @@ summary: "Checks every row of the vocabulary sheet through the real caption pipe
 
 ## Linked from
 - [[E10 Vocabulary terms survive translation]] (proved by)
+- [[E23 Hindi + English in one sentence (text)]] (proved by)

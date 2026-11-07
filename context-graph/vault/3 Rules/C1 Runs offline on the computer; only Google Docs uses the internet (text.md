@@ -6,6 +6,7 @@ type: "constraint"
 
 ## Linked from
 - [[Speech to text]] (must respect)
+- [[Hindi + English in one sentence]] (must respect)
 - [[Translation]] (must respect)
 - [[Caption style]] (must respect)
 - [[Desktop app]] (must respect)

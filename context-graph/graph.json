@@ -53,7 +53,13 @@
    "id": "feature:speech",
    "type": "feature",
    "name": "Speech to text",
-   "does": "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
+   "does": "Qwen3-ASR 1.7B (default) / 0.6B / 0.6B Hinglish fine-tune on the computer's own mic"
+  },
+  {
+   "id": "feature:code-switching",
+   "type": "feature",
+   "name": "Hindi + English in one sentence",
+   "does": "language=None + Hinglish ASR context, 0.3 s / 3 s phrases, 'mixed' lines repaired by sound (snap_terms) then translated"
   },
   {
    "id": "feature:whisper-fallback",
@@ -356,6 +362,14 @@
    "note": "Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing."
   },
   {
+   "id": "req:R25",
+   "type": "requirement",
+   "name": "Hindi and English mixed in one sentence (Hinglish code-switching): Qwen3-ASR without a forced language, a Hinglish context with the vocabulary, short VAD phrases, phonetic vocabulary repair before translation; 1.7B default with the Hinglish 0.6B fine-tune switchable",
+   "date": "2026-11-07",
+   "status": "partial",
+   "note": "Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers."
+  },
+  {
    "id": "file:app/livecaptions/__main__.py",
    "type": "file",
    "name": "app/livecaptions/__main__.py",
@@ -394,7 +408,7 @@
    "id": "file:app/livecaptions/models.py",
    "type": "file",
    "name": "app/livecaptions/models.py",
-   "lines": 358,
+   "lines": 364,
    "summary": "First-run setup: downloads the speech and translation models (and the"
   },
   {
@@ -422,7 +436,7 @@
    "id": "file:app/livecaptions/qwen_engine.py",
    "type": "file",
    "name": "app/livecaptions/qwen_engine.py",
-   "lines": 296,
+   "lines": 314,
    "summary": "Qwen3-ASR speech recognition: listens to the microphone itself (so it works"
   },
   {
@@ -457,7 +471,7 @@
    "id": "file:app/livecaptions/speech.py",
    "type": "file",
    "name": "app/livecaptions/speech.py",
-   "lines": 259,
+   "lines": 279,
    "summary": "Chooses the speech engine:"
   },
   {
@@ -471,7 +485,7 @@
    "id": "file:app/livecaptions/translator.py",
    "type": "file",
    "name": "app/livecaptions/translator.py",
-   "lines": 1851,
+   "lines": 1950,
    "summary": "Live caption translator: English -> Hinglish/Hindi and Hindi/Hinglish -> English."
   },
   {
@@ -494,6 +508,16 @@
    "name": "app/livecaptions/data/google-docs/LiveCaptions.gs",
    "lines": 87,
    "summary": ""
+  },
+  {
+   "id": "file:tests/test_vocabulary.py",
+   "type": "file",
+   "name": "tests/test_vocabulary.py"
+  },
+  {
+   "id": "file:tests/test_qwen_live.py",
+   "type": "file",
+   "name": "tests/test_qwen_live.py"
   },
   {
    "id": "file:desktop/src/components/speech/EngineModelTable.tsx",
@@ -730,7 +754,7 @@
    "id": "decision:D01",
    "type": "decision",
    "name": "Qwen3-ASR for speech",
-   "why": "Best Hindi + English accuracy in our tests; 0.6B is fast, 1.7B more accurate",
+   "why": "Best Hindi + English accuracy in our tests; 1.7B follows mid-sentence switches best (default since Nov 7 2026), 0.6B is faster",
    "revisit_when": "a better offline Hindi model appears"
   },
   {
@@ -987,6 +1011,22 @@
    "confidence": "high (code), **not yet used by an operator**"
   },
   {
+   "id": "evidence:E23",
+   "type": "evidence",
+   "name": "Hindi + English in one sentence (text)",
+   "how": "`tests/test_vocabulary.py` *Hindi + English* checks: mixed line detected and captioned in all 3 modes, terms snapped by sound in both scripts, real words untouched, context echo dropped; still `ALL TERMS EXACT`",
+   "date": "Nov 7 2026",
+   "confidence": "high (code)"
+  },
+  {
+   "id": "evidence:E24",
+   "type": "evidence",
+   "name": "Hindi + English in one sentence (audio)",
+   "how": "`tests/test_qwen_live.py`, 4 mixed + 1 Hindi Mac-voice clips, M4 Pro. Before (forced Hindi, 0.6 s / 10 s): English words written in Devanagari (*एंड देन वी विल डू सेवा* → \"Den We Will Do sewa\"), finals 3.0 s after speech. Now 1.7B: English stays Latin (*but slides*, *Then we will do seva*), finals 2.6 s after speech. 0.6B Hinglish: best on names (*सुदीक्षा जी*) and English words, but more invented words (*सिंबरन*, *बिद्ध लव*)",
+   "date": "Nov 7 2026",
+   "confidence": "medium: **synthetic voice only; not yet on real code-switched speakers**"
+  },
+  {
    "id": "release:v1.0.0",
    "type": "release",
    "name": "v1.0.0"
@@ -1045,6 +1085,16 @@
    "id": "release:v1.1.0",
    "type": "release",
    "name": "v1.1.0"
+  },
+  {
+   "id": "release:v2.0.0",
+   "type": "release",
+   "name": "v2.0.0"
+  },
+  {
+   "id": "release:v2.0.1",
+   "type": "release",
+   "name": "v2.0.1"
   }
  ],
  "edges": [
@@ -1080,6 +1130,18 @@
   },
   {
    "source": "feature:speech",
+   "type": "must_respect",
+   "target": "constraint:C5",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "must_respect",
+   "target": "constraint:C1",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
    "type": "must_respect",
    "target": "constraint:C5",
    "confidence": 1.0
@@ -1517,6 +1579,36 @@
    "confidence": 1.0
   },
   {
+   "source": "req:R25",
+   "type": "answered_by",
+   "target": "feature:code-switching",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R25",
+   "type": "answered_by",
+   "target": "feature:speech",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R25",
+   "type": "answered_by",
+   "target": "feature:vocabulary",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R25",
+   "type": "answered_by",
+   "target": "feature:spelling-fixes",
+   "confidence": 1.0
+  },
+  {
+   "source": "req:R25",
+   "type": "answered_by",
+   "target": "feature:model-download",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:overlay",
    "type": "implemented_in",
    "target": "file:app/livecaptions/data/overlay.html",
@@ -1562,6 +1654,42 @@
    "source": "feature:speech",
    "type": "implemented_in",
    "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/translator.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:app/livecaptions/hinglish.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:tests/test_vocabulary.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:code-switching",
+   "type": "implemented_in",
+   "target": "file:tests/test_qwen_live.py",
    "confidence": 1.0
   },
   {
@@ -1957,13 +2085,13 @@
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/translator.py",
+   "target": "file:app/livecaptions/hinglish.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
@@ -1999,12 +2127,6 @@
   {
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/speech.py",
-   "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
@@ -2012,6 +2134,12 @@
    "source": "file:app/livecaptions/speech.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/speech.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
    "confidence": 1.0
   },
   {
@@ -2023,12 +2151,6 @@
   {
    "source": "file:app/livecaptions/translation.py",
    "type": "imports",
-   "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translation.py",
-   "type": "imports",
    "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
@@ -2039,51 +2161,9 @@
    "confidence": 1.0
   },
   {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_mode.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_library.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_setup.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/meaning.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_import.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
+   "source": "file:app/livecaptions/translation.py",
    "type": "imports",
    "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/models.py",
    "confidence": 1.0
   },
   {
@@ -2095,7 +2175,31 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/translation.py",
+   "target": "file:app/livecaptions/song_mode.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/models.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_library.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/gdocs.py",
    "confidence": 1.0
   },
   {
@@ -2107,7 +2211,31 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/gdocs.py",
+   "target": "file:app/livecaptions/translation.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_bridge.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
    "confidence": 1.0
   },
   {
@@ -2383,6 +2511,12 @@
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
+   "target": "file:app/livecaptions/song_library.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
    "target": "file:app/livecaptions/song_match.py",
    "confidence": 1.0
   },
@@ -2396,12 +2530,6 @@
    "source": "test:tests/test_songs.py",
    "type": "tests",
    "target": "file:app/livecaptions/song_import.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "test:tests/test_songs.py",
-   "type": "tests",
-   "target": "file:app/livecaptions/song_library.py",
    "confidence": 1.0
   },
   {
@@ -2987,6 +3115,54 @@
    "confidence": 1.0
   },
   {
+   "source": "evidence:E23",
+   "type": "proves",
+   "target": "feature:code-switching",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E23",
+   "type": "proves",
+   "target": "feature:caption-modes",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E23",
+   "type": "proves",
+   "target": "feature:vocabulary",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E23",
+   "type": "proved_by",
+   "target": "test:tests/test_vocabulary.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "evidence:E24",
+   "type": "proves",
+   "target": "feature:speech",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E24",
+   "type": "proves",
+   "target": "feature:code-switching",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E24",
+   "type": "proves",
+   "target": "feature:hinglish",
+   "confidence": 0.6
+  },
+  {
+   "source": "evidence:E24",
+   "type": "proved_by",
+   "target": "test:tests/test_qwen_live.py",
+   "confidence": 1.0
+  },
+  {
    "source": "release:v1.0.1",
    "type": "follows",
    "target": "release:v1.0.0",
@@ -3053,9 +3229,21 @@
    "confidence": 1.0
   },
   {
+   "source": "release:v2.0.0",
+   "type": "follows",
+   "target": "release:v1.1.0",
+   "confidence": 1.0
+  },
+  {
+   "source": "release:v2.0.1",
+   "type": "follows",
+   "target": "release:v2.0.0",
+   "confidence": 1.0
+  },
+  {
    "source": "req:R21",
    "type": "shipped_in",
-   "target": "release:v1.1.0",
+   "target": "release:v2.0.1",
    "confidence": 1.0
   }
  ]

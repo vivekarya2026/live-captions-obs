@@ -23,7 +23,7 @@ verbose = "--verbose" in sys.argv
 p = t.CaptionPipeline(t.Translator())
 v = p.vocab
 print(f"{len(v.english_sub)} English term keys, {len(v.hindi_to_term)} Hindi spellings, "
-      f"context: en {len(v.asr_context_for('en'))} / hi {len(v.asr_context_for('hi'))} chars")
+      f"ASR context {len(v.asr_context())} chars (vocabulary {len(v.asr_vocab_list())})")
 
 wb = openpyxl.load_workbook(t.VOCAB_XLSX, read_only=True)
 rows = [r for r in wb["Hindi_English_Hinglish"].iter_rows(min_row=2, values_only=True) if r[0] and r[2]]
@@ -72,5 +72,41 @@ for heard, lang in [("Let us all do suya with love and humility.", "en"),
                     ("हम सब मिलकर सिमरान करेंगे।", "hi"),
                     ("आज की सेना बहुत मजबूत है।", "hi")]:
     print(f"   {heard}\n      -> {v.fix_recognition(heard, lang)}")
+
+# Code-switched Hindi-English (Qwen3-ASR decodes with language=None)
+print("\nHindi + English in one sentence:")
+checks = []
+
+
+def check(name, ok, detail=""):
+    checks.append(ok)
+    print(f"   {'PASS' if ok else 'FAIL'}  {name}{'  | ' + detail if detail else ''}")
+
+
+ctx = v.asr_context()
+check("ASR context: Hinglish instructions + vocabulary, within budget",
+      ctx.startswith("Bilingual Hindi-English") and "CRITICAL HOTWORDS" in ctx and "Nirankar" in ctx
+      and len(v.asr_vocab_list()) <= 700, f"{len(ctx)} chars")
+check("context echo dropped (example sentence, instructions)",
+      v.is_context_echo(t.ASR_EXAMPLE) and v.is_context_echo("Speakers switch between English and Hindi mid-sentence")
+      and not v.is_context_echo("मेरा phone नहीं मिल रहा, can you please check करो"))
+mixed = "so basically कल हम सब office में meeting करेंगे because deadline next week है."
+check("mixed line detected", t.detect_language(mixed) == "mixed")
+for mode, want in (("hi-en", "meet"), ("en-hinglish", "kal hum sab"), ("en-hi", "कल हम सब")):
+    p.mode = mode
+    out = p.process(mixed, "speech") or ""
+    check(f"mixed line -> {mode} caption", want in out.lower() and "office" in out.lower(), out)
+for heard, want in (("सीमरन", "सिमरन"), ("समागन", "समागम"), ("simrun", "simran"), ("nirankaar", "Nirankar"),
+                    ("meeting", "meeting"), ("office", "office"), ("कल", "कल")):
+    got = v.snap_terms(heard)
+    check(f"snap_terms {heard} -> {want}", got == want, got)
+check("misheard Hindi in a mixed line: coach -> कुछ", t.fix_confusions("हम coach नहीं कर सकते") == "हम कुछ नहीं कर सकते")
+check("plain English untouched", t.fix_confusions("the coach said hi") == "the coach said hi")
+p.mode = "hi-en"
+out = p.process("आज हम सब सीमरन करेंगे and then we will do sewa.", "speech") or ""
+check("vocabulary kept through translation", "simran" in out.lower() and "sewa" in out.lower(), out)
+mixed_fail = checks.count(False)
+
 total = sum(len(f) for f in fails.values())
+print(f"\n{'HINGLISH CHECKS PASS' if not mixed_fail else f'{mixed_fail} Hinglish checks failed'}")
 print(f"\n{'ALL TERMS EXACT' if not total else f'{total} misses'}")

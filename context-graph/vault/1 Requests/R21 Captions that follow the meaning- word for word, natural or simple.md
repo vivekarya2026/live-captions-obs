@@ -11,4 +11,4 @@ note: "v1.1.0. On the computer, 1.5 s limit, word-for-word fallback."
 
 ## Links
 - answered by [[Caption style]]
-- shipped in [[v1.1.0]]
+- shipped in [[v2.0.1]]

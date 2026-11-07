@@ -1,11 +1,11 @@
 ---
 id: feature:speech
 type: "feature"
-does: "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
+does: "Qwen3-ASR 1.7B (default) / 0.6B / 0.6B Hinglish fine-tune on the computer's own mic"
 ---
 # Speech to text
 
-**does:** Qwen3-ASR 0.6B / 1.7B on the computer's own mic
+**does:** Qwen3-ASR 1.7B (default) / 0.6B / 0.6B Hinglish fine-tune on the computer's own mic
 
 ## Links
 - must respect [[C1 Runs offline on the computer; only Google Docs uses the internet (text]]
@@ -20,6 +20,7 @@ does: "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
 - [[R07 Lower latency, faster captions, switch language both ways]] (answered by)
 - [[R12 Use Qwen3-ASR for lower latency]] (answered by)
 - [[R23 Choose the transcription and translation models- download, load and de]] (answered by)
+- [[R25 Hindi and English mixed in one sentence (Hinglish code-switching)- Qwe]] (answered by)
 - [[speech]] (part of)
 - [[tests-test_qwen_live.py]] (checks)
 - [[D01 Qwen3-ASR for speech]] (about)
@@ -27,3 +28,4 @@ does: "Qwen3-ASR 0.6B / 1.7B on the computer's own mic"
 - [[D09 Desktop app = fork of Handy (Tauri v2), engine stays in Python]] (about)
 - [[E02 Intel .pkg works]] (is evidence for)
 - [[E21 Song mode finds the song and follows lines]] (is evidence for)
+- [[E24 Hindi + English in one sentence (audio)]] (is evidence for)

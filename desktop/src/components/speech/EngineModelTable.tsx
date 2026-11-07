@@ -24,7 +24,7 @@ function view(d: EngineState, kind: EngineModelKind) {
       chosen: d.speech_model,
       loaded: d.speech_loaded ?? (d.engine === "qwen" ? d.speech_model : ""),
       loading: d.speech_loading,
-      fallback: d.speech_default ?? "qwen-0.6b",
+      fallback: d.speech_default ?? "qwen-1.7b",
       route: "/speech?model=",
     };
   return {

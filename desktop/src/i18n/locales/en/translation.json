@@ -1128,11 +1128,15 @@
     "models": {
       "qwen-0.6b": {
         "name": "Qwen3 0.6B",
-        "about": "Fast and accurate with your vocabulary. Good on any computer."
+        "about": "Faster and lighter. Good on any computer."
       },
       "qwen-1.7b": {
         "name": "Qwen3 1.7B",
-        "about": "A little more accurate on hard audio. Best on Apple Silicon or an NVIDIA GPU."
+        "about": "Default. Best when speakers mix Hindi and English in one sentence. Fastest on Apple Silicon or an NVIDIA GPU."
+      },
+      "qwen-0.6b-hinglish": {
+        "name": "Qwen3 0.6B Hinglish",
+        "about": "Community model trained on mixed Hindi-English speech. Small and fast; try it against 1.7B."
       }
     },
     "typeOnly": {
@@ -1158,7 +1162,11 @@
     },
     "qwen-1.7b": {
       "name": "Qwen3-ASR 1.7B",
-      "about": "More accurate, needs more memory."
+      "about": "Default. Best with mixed Hindi-English speech; needs more memory."
+    },
+    "qwen-0.6b-hinglish": {
+      "name": "Qwen3-ASR 0.6B Hinglish",
+      "about": "Fine-tuned on Hindi-English code-switching. Light, to compare with 1.7B."
     },
     "nllb-600m": {
       "name": "NLLB-200 600M",

@@ -1,7 +1,7 @@
 ---
 id: file:app/livecaptions/speech.py
 type: "file"
-lines: 259
+lines: 279
 summary: "Chooses the speech engine:"
 ---
 # app/livecaptions/speech.py
@@ -9,13 +9,14 @@ summary: "Chooses the speech engine:"
 **summary:** Chooses the speech engine:
 
 ## Links
-- uses [[app-livecaptions-obs_bridge.py]]
 - uses [[app-livecaptions-models.py]]
 - uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-obs_bridge.py]]
 - uses [[app-livecaptions-qwen_engine.py]]
 
 ## Linked from
 - [[Speech to text]] (built in)
+- [[Hindi + English in one sentence]] (built in)
 - [[Whisper fallback]] (built in)
 - [[Microphone control]] (built in)
 - [[Song mode]] (built in)

@@ -28,3 +28,4 @@ does: "Auto, English->Hinglish, English->Hindi, Hindi->English"
 - [[E19 Mac installer contains the desktop app]] (is evidence for)
 - [[E21 Song mode finds the song and follows lines]] (is evidence for)
 - [[E22 Song uploads and Song mode states]] (is evidence for)
+- [[E23 Hindi + English in one sentence (text)]] (is evidence for)

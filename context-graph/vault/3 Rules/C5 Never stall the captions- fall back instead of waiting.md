@@ -7,6 +7,7 @@ type: "constraint"
 ## Linked from
 - [[Caption overlay]] (must respect)
 - [[Speech to text]] (must respect)
+- [[Hindi + English in one sentence]] (must respect)
 - [[Whisper fallback]] (must respect)
 - [[Caption style]] (must respect)
 - [[Dictation]] (must respect)
