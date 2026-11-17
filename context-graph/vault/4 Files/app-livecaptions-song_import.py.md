@@ -9,8 +9,8 @@ summary: "Song mode: read an upload (any format) and cut it into songs and lines
 **summary:** Song mode: read an upload (any format) and cut it into songs and lines.
 
 ## Links
-- uses [[app-livecaptions-translator.py]]
 - uses [[app-livecaptions-hinglish.py]]
+- uses [[app-livecaptions-translator.py]]
 
 ## Linked from
 - [[Song mode]] (built in)

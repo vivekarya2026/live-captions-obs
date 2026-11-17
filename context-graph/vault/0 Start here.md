@@ -30,6 +30,7 @@ Rebuild with `python context-graph/build.py` after a change.
 - [[R23 Choose the transcription and translation models- download, load and de]] · 2026-11-03 · **done**
 - [[R24 Upload song lyrics in any format (Hindi, English, Punjabi in Devanagar]] · 2026-11-03 · **partial**
 - [[R25 Hindi and English mixed in one sentence (Hinglish code-switching)- Qwe]] · 2026-11-07 · **partial**
+- [[R26 Context graph for coding agents with Graphiti- dated memory of request]] · 2026-11-17 · **partial**
 
 ## Rules for every change
 - [[C1 Runs offline on the computer; only Google Docs uses the internet (text]]

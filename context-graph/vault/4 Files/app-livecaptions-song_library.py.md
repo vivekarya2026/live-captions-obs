@@ -9,8 +9,8 @@ summary: "Song mode: the song library (its own SQLite file) and reading uploads.
 **summary:** Song mode: the song library (its own SQLite file) and reading uploads.
 
 ## Links
-- uses [[app-livecaptions-song_match.py]]
 - uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-song_match.py]]
 
 ## Linked from
 - [[Song mode]] (built in)

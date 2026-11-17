@@ -144,6 +144,10 @@ saved (`Documents/Live Captions`), and anything you couldn't check.
   and evidence behind that file. **After** a change that adds a feature, file, decision or test, add the
   request/feature to `context-graph/requirements.py` if new, then run `python3 context-graph/build.py`
   (must end `every request reaches code; no unlinked nodes`) and commit the result.
+- **Why / when questions** ("why is 1.7B the default?", "what broke Accessibility before?"): if the
+  `live-captions-memory` MCP server is connected, use `search_facts` (dated facts from requests, docs,
+  every commit and past chats). After a change worth remembering, call `add_memory`; after committing, run
+  `context-graph/graphiti/.venv/bin/python context-graph/graphiti/ingest.py` (adds only what's new).
 - **Vocabulary** words: edit `app/livecaptions/data/vocabulary/Vocabulary_for_Live_Translations.xlsx`
   (or `hindi_terms.csv`), not the code. Changes apply live.
 - After any change run `--test` and `tests/test_vocabulary.py`. Both must pass.

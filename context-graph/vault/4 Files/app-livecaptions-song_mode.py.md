@@ -9,8 +9,8 @@ summary: "Song mode: the states from docs/song-mode/04-prototype.md (section 2).
 **summary:** Song mode: the states from docs/song-mode/04-prototype.md (section 2).
 
 ## Links
-- uses [[app-livecaptions-song_match.py]]
 - uses [[app-livecaptions-paths.py]]
+- uses [[app-livecaptions-song_match.py]]
 
 ## Linked from
 - [[Song mode]] (built in)

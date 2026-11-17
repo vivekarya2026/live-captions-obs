@@ -56,6 +56,9 @@ REQUIREMENTS = {
     "R25": ("2026-11-07", "Hindi and English mixed in one sentence (Hinglish code-switching): Qwen3-ASR without a forced language, a Hinglish context with the vocabulary, short VAD phrases, phonetic vocabulary repair before translation; 1.7B default with the Hinglish 0.6B fine-tune switchable",
             "partial", ["code-switching", "speech", "vocabulary", "spelling-fixes", "model-download"],
             "Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers."),
+    "R26": ("2026-11-17", "Context graph for coding agents with Graphiti: dated memory of requests, features, docs, commits and past chats that agents can search and add to (MCP)",
+            "partial", ["agent-memory"],
+            "MCP server lists its 4 tools over stdio; loading needs a Gemini key in context-graph/graphiti/.env."),
 }
 
 # Rules that hold for every change (from AGENTS.md and the conversations)
@@ -119,5 +122,8 @@ FEATURES = {
     "docs": ("Guides", "Setup guide, agent instructions, architecture map",
              ["/docs/SETUP_GUIDE.md", "/AGENTS.md", "/docs/ARCHITECTURE.md", "/docs/GOOGLE_DOCS.md"], ["C3"],
              ["guide", "setup from source"]),
+    "agent-memory": ("Agent memory (Graphiti)", "Developer tool, not part of the app: Graphiti temporal knowledge graph (Gemini + embedded FalkorDB) loaded from graph.json, docs, git and chats; MCP tools search_facts / search_entities / recent_memories / add_memory",
+                     ["/context-graph/graphiti/ingest.py", "/context-graph/graphiti/mcp_server.py", "/context-graph/graphiti/common.py"],
+                     [], ["graphiti", "agent memory"]),
 }
 # Files: names are inside app/livecaptions/; a leading "/" means from the project folder.

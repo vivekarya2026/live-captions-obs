@@ -170,6 +170,12 @@
    "does": "Setup guide, agent instructions, architecture map"
   },
   {
+   "id": "feature:agent-memory",
+   "type": "feature",
+   "name": "Agent memory (Graphiti)",
+   "does": "Developer tool, not part of the app: Graphiti temporal knowledge graph (Gemini + embedded FalkorDB) loaded from graph.json, docs, git and chats; MCP tools search_facts / search_entities / recent_memories / add_memory"
+  },
+  {
    "id": "req:R01",
    "type": "requirement",
    "name": "Live captions for live streaming in OBS",
@@ -368,6 +374,14 @@
    "date": "2026-11-07",
    "status": "partial",
    "note": "Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers."
+  },
+  {
+   "id": "req:R26",
+   "type": "requirement",
+   "name": "Context graph for coding agents with Graphiti: dated memory of requests, features, docs, commits and past chats that agents can search and add to (MCP)",
+   "date": "2026-11-17",
+   "status": "partial",
+   "note": "MCP server lists its 4 tools over stdio; loading needs a Gemini key in context-graph/graphiti/.env."
   },
   {
    "id": "file:app/livecaptions/__main__.py",
@@ -613,6 +627,21 @@
    "id": "file:docs/GOOGLE_DOCS.md",
    "type": "file",
    "name": "docs/GOOGLE_DOCS.md"
+  },
+  {
+   "id": "file:context-graph/graphiti/ingest.py",
+   "type": "file",
+   "name": "context-graph/graphiti/ingest.py"
+  },
+  {
+   "id": "file:context-graph/graphiti/mcp_server.py",
+   "type": "file",
+   "name": "context-graph/graphiti/mcp_server.py"
+  },
+  {
+   "id": "file:context-graph/graphiti/common.py",
+   "type": "file",
+   "name": "context-graph/graphiti/common.py"
   },
   {
    "id": "route:/",
@@ -1095,6 +1124,11 @@
    "id": "release:v2.0.1",
    "type": "release",
    "name": "v2.0.1"
+  },
+  {
+   "id": "release:v2.0.2",
+   "type": "release",
+   "name": "v2.0.2"
   }
  ],
  "edges": [
@@ -1609,6 +1643,12 @@
    "confidence": 1.0
   },
   {
+   "source": "req:R26",
+   "type": "answered_by",
+   "target": "feature:agent-memory",
+   "confidence": 1.0
+  },
+  {
    "source": "feature:overlay",
    "type": "implemented_in",
    "target": "file:app/livecaptions/data/overlay.html",
@@ -2029,6 +2069,24 @@
    "confidence": 1.0
   },
   {
+   "source": "feature:agent-memory",
+   "type": "implemented_in",
+   "target": "file:context-graph/graphiti/ingest.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:agent-memory",
+   "type": "implemented_in",
+   "target": "file:context-graph/graphiti/mcp_server.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "feature:agent-memory",
+   "type": "implemented_in",
+   "target": "file:context-graph/graphiti/common.py",
+   "confidence": 1.0
+  },
+  {
    "source": "file:app/livecaptions/__main__.py",
    "type": "imports",
    "target": "file:app/livecaptions/translator.py",
@@ -2085,25 +2143,25 @@
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/translator.py",
+   "target": "file:app/livecaptions/hinglish.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/song_import.py",
    "type": "imports",
-   "target": "file:app/livecaptions/hinglish.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/song_library.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_match.py",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/song_library.py",
    "type": "imports",
    "target": "file:app/livecaptions/paths.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/song_library.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_match.py",
    "confidence": 1.0
   },
   {
@@ -2115,13 +2173,13 @@
   {
    "source": "file:app/livecaptions/song_mode.py",
    "type": "imports",
-   "target": "file:app/livecaptions/song_match.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
    "source": "file:app/livecaptions/song_mode.py",
    "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
+   "target": "file:app/livecaptions/song_match.py",
    "confidence": 1.0
   },
   {
@@ -2169,49 +2227,7 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/song_library.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_import.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/obs_setup.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/paths.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
    "target": "file:app/livecaptions/obs_bridge.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/gdocs.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/song_mode.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "file:app/livecaptions/translator.py",
-   "type": "imports",
-   "target": "file:app/livecaptions/meaning.py",
    "confidence": 1.0
   },
   {
@@ -2223,7 +2239,49 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
+   "target": "file:app/livecaptions/gdocs.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
    "target": "file:app/livecaptions/translation.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_import.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_library.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/obs_setup.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/meaning.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/speech.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "file:app/livecaptions/translator.py",
+   "type": "imports",
+   "target": "file:app/livecaptions/song_mode.py",
    "confidence": 1.0
   },
   {
@@ -2235,7 +2293,7 @@
   {
    "source": "file:app/livecaptions/translator.py",
    "type": "imports",
-   "target": "file:app/livecaptions/speech.py",
+   "target": "file:app/livecaptions/paths.py",
    "confidence": 1.0
   },
   {
@@ -2469,13 +2527,13 @@
   {
    "source": "test:tests/test_meaning.py",
    "type": "tests",
-   "target": "file:app/livecaptions/translator.py",
+   "target": "file:app/livecaptions/meaning.py",
    "confidence": 1.0
   },
   {
    "source": "test:tests/test_meaning.py",
    "type": "tests",
-   "target": "file:app/livecaptions/meaning.py",
+   "target": "file:app/livecaptions/translator.py",
    "confidence": 1.0
   },
   {
@@ -2511,19 +2569,7 @@
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
-   "target": "file:app/livecaptions/song_match.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "test:tests/test_songs.py",
-   "type": "tests",
    "target": "file:app/livecaptions/song_import.py",
-   "confidence": 1.0
-  },
-  {
-   "source": "test:tests/test_songs.py",
-   "type": "tests",
-   "target": "file:app/livecaptions/qwen_engine.py",
    "confidence": 1.0
   },
   {
@@ -2535,13 +2581,25 @@
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
-   "target": "file:app/livecaptions/song_mode.py",
+   "target": "file:app/livecaptions/song_library.py",
    "confidence": 1.0
   },
   {
    "source": "test:tests/test_songs.py",
    "type": "tests",
-   "target": "file:app/livecaptions/song_library.py",
+   "target": "file:app/livecaptions/qwen_engine.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_match.py",
+   "confidence": 1.0
+  },
+  {
+   "source": "test:tests/test_songs.py",
+   "type": "tests",
+   "target": "file:app/livecaptions/song_mode.py",
    "confidence": 1.0
   },
   {
@@ -3241,9 +3299,15 @@
    "confidence": 1.0
   },
   {
+   "source": "release:v2.0.2",
+   "type": "follows",
+   "target": "release:v2.0.1",
+   "confidence": 1.0
+  },
+  {
    "source": "req:R21",
    "type": "shipped_in",
-   "target": "release:v2.0.1",
+   "target": "release:v2.0.2",
    "confidence": 1.0
   }
  ]

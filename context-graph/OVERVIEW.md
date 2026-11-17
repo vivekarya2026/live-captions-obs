@@ -36,6 +36,7 @@ flowchart LR
   R23["R23 Choose the transcription and…"]:::done
   R24["R24 Upload song lyrics in any format…"]:::partial
   R25["R25 Hindi and English mixed in one…"]:::partial
+  R26["R26 Context graph for coding agents…"]:::partial
   F_overlay(["Caption overlay"])
   F_dock(["App window and OBS dock"])
   F_obs_setup(["OBS setup"])
@@ -59,6 +60,7 @@ flowchart LR
   F_custom_words(["Custom words"])
   F_song_mode(["Song mode"])
   F_docs(["Guides"])
+  F_agent_memory(["Agent memory (Graphiti)"])
   R01 --> F_overlay
   R01 --> F_dock
   R01 --> F_obs_setup
@@ -112,6 +114,7 @@ flowchart LR
   R25 --> F_vocabulary
   R25 --> F_spelling_fixes
   R25 --> F_model_download
+  R26 --> F_agent_memory
   F_overlay --> translator_py[/translator.py/]
   F_dock --> translator_py[/translator.py/]
   F_obs_setup --> obs_setup_py[/obs_setup.py/]
@@ -168,6 +171,7 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 - **R22** Deliver it with Handy's UI and features (dictation, history, overlay, tray, custom words, models, filler removal, onboarding, themes), without Handy's branding: Fork of Handy in desktop/ (Tauri v2), engine as a helper process. Engine + code tested; not yet tried by a person with a mic, and not in the installers yet.
 - **R24** Upload song lyrics in any format (Hindi, English, Punjabi in Devanagari or Roman letters, with translations); recognise the song while it's sung and show each line with its translation in the captions and document; design sprint with approval gates: Design sprint docs/song-mode (Gates 1-5 approved). Concept B: suggest and confirm. Tested on text and on audio through Qwen3 (0 wrong lines); not yet on real singing.
 - **R25** Hindi and English mixed in one sentence (Hinglish code-switching): Qwen3-ASR without a forced language, a Hinglish context with the vocabulary, short VAD phrases, phonetic vocabulary repair before translation; 1.7B default with the Hinglish 0.6B fine-tune switchable: Text checks pass (tests/test_vocabulary.py). Audio tested with a Mac voice only; not yet on real code-switched speakers.
+- **R26** Context graph for coding agents with Graphiti: dated memory of requests, features, docs, commits and past chats that agents can search and add to (MCP): MCP server lists its 4 tools over stdio; loading needs a Gemini key in context-graph/graphiti/.env.
 
 ## Not proven yet
 
@@ -184,4 +188,4 @@ Picture: `npx @mermaid-js/mermaid-cli -i <the block above> -o context-graph/over
 
 ## Size
 
-6 constraints, 23 features, 25 requirements, 41 files, 20 routes, 6 tests, 12 decisions, 24 evidences, 14 releases, 358 links.
+6 constraints, 24 features, 26 requirements, 44 files, 20 routes, 6 tests, 12 decisions, 24 evidences, 15 releases, 363 links.

@@ -131,6 +131,7 @@ Outside the app:
 | `tests/` | `test_vocabulary.py` (every term, every mode), `test_meaning.py` (caption-style fallbacks, no model needed), `bench_meaning.py` (style model speed test), `test_qwen_live.py` (speech), `test_gdocs_script.py` |
 | `docs/` | User guides (install, setup, Google Docs) and this map |
 | `context-graph/` | Every user request linked to the features, files, routes, tests, decisions and evidence behind it. `requirements.py` (edit by hand) → `build.py` → `graph.json`, `vault/` (Obsidian), `OVERVIEW.md`; ask it with `query.py` |
+| `context-graph/graphiti/` | Developer tool: Graphiti memory graph for coding agents (dated facts from `graph.json`, docs, commits, chats). Setup: `uv venv -p 3.12 .venv && uv pip install -r requirements.txt`, `GEMINI_API_KEY` in `.env`; `ingest.py` loads (incremental), `mcp_server.py` serves it to agents. Data stays in `data/` (not committed) |
 
 ## 3. Where things are kept on a computer
 
